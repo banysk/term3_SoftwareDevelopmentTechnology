@@ -1,7 +1,6 @@
 #pragma once
 #include <string>
 #include <utility>
-//пидор
 class Date {
  public:
      Date(int year, int month, int day) :
