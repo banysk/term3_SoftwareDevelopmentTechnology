@@ -1,11 +1,11 @@
 #pragma once
 
 class BufferedReader {
-private:
-    PackageStream* ptr;
-    char* temp_buf;
-    char* extra_buf;
-    int32_t extra_count;
+ private:
+     PackageStream* ptr;
+     char* temp_buf;
+     char* extra_buf;
+     int32_t extra_count;
  public:
     explicit BufferedReader(PackageStream* stream) :
         ptr(stream),
