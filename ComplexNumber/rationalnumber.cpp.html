@@ -1,0 +1,121 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+	<head>
+        <meta charset="utf-8"/>
+	    <title>rationalnumber.cpp</title>
+	    <link href="../../third-party/google-code-prettify/prettify-CppCoverage.css" type="text/css" rel="stylesheet" />
+	    <script type="text/javascript" src="../../third-party/google-code-prettify/prettify.js"></script>
+	</head>
+    <body onload="prettyPrint()">
+        <h4></h4>
+        <pre class="prettyprint lang-cpp linenums">
+#include "RationalNumber.h"
+#include &lt;string&gt;
+
+<span style = "background-color:#dfd">long long gcd(long long a, long long b) {
+	return b ? gcd(b, a % b) : a;
+}</span>
+
+<span style = "background-color:#dfd">long long lcm(long long a, long long b) {
+	return a / gcd(a, b) * b;
+}</span>
+
+<span style = "background-color:#dfd">RationalNumber::RationalNumber() {
+	numerator = 0;
+	denominator = 1;
+	is_negative = false;
+}</span>
+
+<span style = "background-color:#dfd">RationalNumber::RationalNumber(double num, double den) {
+	bool num_sign = (num &lt; 0), den_sign = (den &lt; 0);
+	is_negative = (num_sign + den_sign) % 2;
+	num &gt; 0 ? numerator = (long long)num : numerator = (long long)num * (-1);
+	den &gt; 0 ? denominator = (long long)den : denominator = (long long)den * (-1);
+	long long devider = gcd(numerator, denominator);
+	numerator /= devider;
+	denominator /= devider;
+}</span>
+
+<span style = "background-color:#dfd">RationalNumber&amp; RationalNumber::operator=(const RationalNumber &amp;right) {
+	this-&gt;numerator = right.numerator;
+	this-&gt;denominator = right.denominator;
+	this-&gt;is_negative = right.is_negative;
+	return *this;
+}</span>
+
+<span style = "background-color:#dfd">RationalNumber operator+(const RationalNumber &amp;left, const RationalNumber &amp;right) {
+	long long multiple = lcm(left.denominator, right.denominator);</span>
+	long long l, r;
+<span style = "background-color:#dfd">	left.is_negative ? l = multiple / left.denominator * left.numerator * -1 : l = multiple / left.denominator * left.numerator;
+	right.is_negative ? r = multiple / right.denominator * right.numerator * -1: r = multiple / right.denominator * right.numerator;
+	return RationalNumber(l + r, multiple);
+}</span>
+
+<span style = "background-color:#dfd">RationalNumber operator-(const RationalNumber &amp;left, const RationalNumber &amp;right) {
+	long long multiple = lcm(left.denominator, right.denominator);</span>
+	long long l, r;
+<span style = "background-color:#dfd">	left.is_negative ? l = multiple / left.denominator * left.numerator * -1 : l = multiple / left.denominator * left.numerator;
+	right.is_negative ? r = multiple / right.denominator * right.numerator * -1 : r = multiple / right.denominator * right.numerator;
+	return RationalNumber(l - r, multiple);
+}</span>
+
+<span style = "background-color:#dfd">RationalNumber operator*(const RationalNumber &amp;left, const RationalNumber &amp;right) {</span>
+	long long l, r;
+<span style = "background-color:#dfd">	left.is_negative ? l = left.numerator * -1 : l = left.numerator;
+	right.is_negative ? r = right.numerator * -1 : r = right.numerator;
+	return RationalNumber(l * r, left.denominator * right.denominator);
+}</span>
+
+<span style = "background-color:#dfd">RationalNumber operator/(const RationalNumber &amp;left, const RationalNumber &amp;right) {</span>
+	long long l, r;
+<span style = "background-color:#dfd">	left.is_negative ? l = left.numerator * -1 : l = left.numerator;
+	right.is_negative ? r = right.numerator * -1 : r = right.numerator;
+	return RationalNumber(l * right.denominator, left.denominator * r);
+}</span>
+
+<span style = "background-color:#dfd">bool operator==(const RationalNumber &amp;left, const RationalNumber &amp;right) {
+	long long multiple = lcm(left.denominator, right.denominator);</span>
+	long long l, r;
+<span style = "background-color:#dfd">	left.is_negative ? l = multiple / left.denominator * left.numerator * (-1) : l = multiple / left.denominator * left.numerator;
+	right.is_negative ? r = multiple / right.denominator * right.numerator * (-1) : r = multiple / right.denominator * right.numerator;
+	return (l == r);
+}</span>
+
+<span style = "background-color:#dfd">bool operator!=(const RationalNumber &amp;left, const RationalNumber &amp;right) {
+	return !(left == right);
+}</span>
+
+<span style = "background-color:#dfd">long long RationalNumber::get_num() {
+	return numerator;
+}</span>
+
+<span style = "background-color:#dfd">long long RationalNumber::get_den() {
+	return denominator;
+}</span>
+
+<span style = "background-color:#dfd">bool RationalNumber::isNegative() {
+	return is_negative;
+}</span>
+
+<span style = "background-color:#dfd">void RationalNumber::signReverse() {
+	is_negative = !is_negative;
+}</span>
+
+<span style = "background-color:#dfd">double RationalNumber::toDouble() {
+	return (((double)numerator) / (double)denominator);
+}</span></pre>
+        <hr />
+        <table width="100%">
+            <thead>
+                <tr>
+                    <th align="center">
+                        <small>Generated by</small>
+                        <a href="https://github.com/OpenCppCoverage/OpenCppCoverage/releases">
+                            <strong>OpenCppCoverage (Version: 0.9.9.0)</strong>
+                        </a>
+                    </th>
+                </tr>
+            </thead>
+        </table>
+    </body>
+</html>

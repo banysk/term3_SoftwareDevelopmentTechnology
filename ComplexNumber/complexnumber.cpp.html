@@ -1,0 +1,175 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+	<head>
+        <meta charset="utf-8"/>
+	    <title>complexnumber.cpp</title>
+	    <link href="../../third-party/google-code-prettify/prettify-CppCoverage.css" type="text/css" rel="stylesheet" />
+	    <script type="text/javascript" src="../../third-party/google-code-prettify/prettify.js"></script>
+	</head>
+    <body onload="prettyPrint()">
+        <h4></h4>
+        <pre class="prettyprint lang-cpp linenums">
+#include "ComplexNumber.h"
+#include &lt;cmath&gt;
+#define M_PI 3.14159265358979323846  /* pi */
+
+<span style = "background-color:#dfd">ComplexNumber::ComplexNumber() {}</span>
+
+<span style = "background-color:#dfd">ComplexNumber::ComplexNumber(double re, double im) {
+	real = RationalNumber(re * 1000, 1000);
+	imagine = RationalNumber(im * 1000, 1000);
+}</span>
+
+<span style = "background-color:#dfd">ComplexNumber::ComplexNumber(RationalNumber re, RationalNumber im) {
+	real = re;
+	imagine = im;
+}</span>
+
+<span style = "background-color:#dfd">ComplexNumber operator+(const ComplexNumber &amp;left, const ComplexNumber &amp;right) {
+	return ComplexNumber(left.real + right.real, left.imagine + right.imagine);
+}</span>
+
+<span style = "background-color:#dfd">ComplexNumber&amp; ComplexNumber::operator+=(const ComplexNumber &amp;right) {
+	this-&gt;real = this-&gt;real + right.real;
+	this-&gt;imagine = this-&gt;imagine + right.imagine;
+	return *this;
+}</span>
+
+<span style = "background-color:#dfd">ComplexNumber operator-(const ComplexNumber &amp;left, const ComplexNumber &amp;right) {
+	return ComplexNumber(left.real - right.real, left.imagine - right.imagine);
+}</span>
+
+<span style = "background-color:#dfd">ComplexNumber&amp; ComplexNumber::operator-=(const ComplexNumber &amp;right) {
+	this-&gt;real = this-&gt;real - right.real;
+	this-&gt;imagine = this-&gt;imagine - right.imagine;
+	return *this;
+}</span>
+
+<span style = "background-color:#dfd">ComplexNumber operator*(const ComplexNumber &amp;left, const ComplexNumber &amp;right) {
+	return ComplexNumber(left.real * right.real - left.imagine * right.imagine, left.real * right.imagine + left.imagine * right.real);
+}</span>
+
+<span style = "background-color:#dfd">ComplexNumber&amp; ComplexNumber::operator*=(const ComplexNumber &amp;right) {
+	RationalNumber re = this-&gt;real, im = this-&gt;imagine;
+	this-&gt;real = re * right.real - im * right.imagine;
+	this-&gt;imagine = re * right.imagine + im * right.real;
+	return *this;
+}</span>
+
+<span style = "background-color:#dfd">ComplexNumber operator/(const ComplexNumber &amp;left, const ComplexNumber &amp;right) {
+	RationalNumber re = ((left.real * right.real + left.imagine * right.imagine) / (right.real * right.real + right.imagine * right.imagine));
+	RationalNumber im = ((right.real * left.imagine - left.real * right.imagine) / (right.real * right.real + right.imagine * right.imagine));
+	return ComplexNumber(re, im);
+}</span>
+
+<span style = "background-color:#dfd">ComplexNumber&amp; ComplexNumber::operator/=(const ComplexNumber &amp;right) {
+	RationalNumber re = this-&gt;real, im = this-&gt;imagine;
+	this-&gt;real = ((re * right.real + im * right.imagine) / (right.real * right.real + right.imagine * right.imagine));
+	this-&gt;imagine = ((right.real * im - re * right.imagine) / (right.real * right.real + right.imagine * right.imagine));
+	return *this;
+}</span>
+
+<span style = "background-color:#dfd">ComplexNumber&amp; ComplexNumber::operator=(const ComplexNumber &amp;right) {
+	this-&gt;real = right.real;
+	this-&gt;imagine = right.imagine;
+	return *this;
+}</span>
+
+<span style = "background-color:#dfd">ComplexNumber&amp; ComplexNumber::operator=(const double &amp;right) {
+	this-&gt;real = RationalNumber(right);
+	this-&gt;imagine = RationalNumber(0);
+	return *this;
+}</span>
+
+<span style = "background-color:#dfd">bool operator==(const ComplexNumber &amp;left, const ComplexNumber &amp;right) {
+	return (left.real == right.real &amp;&amp; left.imagine == right.imagine);
+}</span>
+
+<span style = "background-color:#dfd">bool operator!=(const ComplexNumber &amp;left, const ComplexNumber &amp;right) {
+	return (left.real != right.real || left.imagine != right.imagine);
+}</span>
+
+<span style = "background-color:#dfd">ComplexNumber ComplexNumber::operator-() {
+	RationalNumber re = this-&gt;real, im = this-&gt;imagine;
+	re.signReverse();
+	im.signReverse();
+	return ComplexNumber(re, im);
+}</span>
+
+<span style = "background-color:#dfd">ComplexNumber ComplexNumber::Pow(int p = 2) {
+	RationalNumber re = real;
+	RationalNumber im = imagine;
+	ComplexNumber a(re, im);
+	for (int i = 1; i &lt; p; i++) {
+		a *= ComplexNumber(re, im);
+	}
+	return a;
+}</span>
+
+<span style = "background-color:#dfd">double ComplexNumber::arg() {</span>
+	double x, y;
+<span style = "background-color:#dfd">	real.isNegative() ? x = real.toDouble() * (-1) : x = real.toDouble();
+	imagine.isNegative() ? y = imagine.toDouble() * (-1) : y = imagine.toDouble();
+	return atan2(y, x);
+}</span>
+
+<span style = "background-color:#dfd">double ComplexNumber::abs() {
+	RationalNumber middle = real * real + imagine * imagine;
+	return sqrt((double)middle.get_num()/(double)middle.get_den());
+}</span>
+
+<span style = "background-color:#dfd">RationalNumber ComplexNumber::getReal() {
+	return real;
+}</span>
+
+<span style = "background-color:#dfd">RationalNumber ComplexNumber::getImagine() {
+	return imagine;
+}</span>
+
+<span style = "background-color:#dfd">void ComplexNumber::setReal(long long in) {
+	real = RationalNumber(in);
+}</span>
+
+<span style = "background-color:#dfd">void ComplexNumber::setReal(RationalNumber in) {
+	real = in;
+}</span>
+
+<span style = "background-color:#dfd">void ComplexNumber::setImagine(long long in) {
+	imagine = RationalNumber(in);
+}</span>
+
+<span style = "background-color:#dfd">void ComplexNumber::setImagine(RationalNumber in) {
+	imagine = in;
+}</span>
+
+<span style = "background-color:#dfd">std::string ComplexNumber::toString() {
+	std::string out;
+	if (real.isNegative()) out += '-';
+	out += std::to_string(real.get_num());
+	if (real.get_den() != 1) out += '/' + std::to_string(real.get_den());
+	imagine.isNegative() ? out += '-' : out += '+';
+	out += std::to_string(imagine.get_num());
+	if (imagine.get_den() != 1) out += '/' + std::to_string(imagine.get_den());
+	out += 'i';
+	return out;
+}</span>
+
+<span style = "background-color:#dfd">std::ostream&amp; operator&lt;&lt;(std::ostream &amp;out, ComplexNumber &amp;complexnumber) {
+	out &lt;&lt; complexnumber.toString();
+	return out;
+}</span></pre>
+        <hr />
+        <table width="100%">
+            <thead>
+                <tr>
+                    <th align="center">
+                        <small>Generated by</small>
+                        <a href="https://github.com/OpenCppCoverage/OpenCppCoverage/releases">
+                            <strong>OpenCppCoverage (Version: 0.9.9.0)</strong>
+                        </a>
+                    </th>
+                </tr>
+            </thead>
+        </table>
+    </body>
+</html>
