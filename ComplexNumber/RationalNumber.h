@@ -1,8 +1,8 @@
 #pragma once
 #include <string>
 
-long long gcd(long long a, unsigned long long b);
-long long lcm(long long a, unsigned long long b);
+long long gcd(long long a, long long b);
+long long lcm(long long a, long long b);
 
 class RationalNumber {
 public:
