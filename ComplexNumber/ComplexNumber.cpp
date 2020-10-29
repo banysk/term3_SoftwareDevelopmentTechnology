@@ -4,12 +4,12 @@
 
 ComplexNumber::ComplexNumber() {}
 
-ComplexNumber::ComplexNumber(double re, double im) {
+ComplexNumber::ComplexNumber(const double &re, const double &im) {
 	real = RationalNumber(re * 1000, 1000);
 	imagine = RationalNumber(im * 1000, 1000);
 }
 
-ComplexNumber::ComplexNumber(RationalNumber re, RationalNumber im) {
+ComplexNumber::ComplexNumber(const RationalNumber &re, const RationalNumber &im) {
 	real = re;
 	imagine = im;
 }
@@ -85,7 +85,7 @@ ComplexNumber ComplexNumber::operator-() {
 	return ComplexNumber(re, im);
 }
 
-ComplexNumber ComplexNumber::Pow(int p = 2) {
+ComplexNumber ComplexNumber::Pow(const int &p = 2) {
 	RationalNumber re = real;
 	RationalNumber im = imagine;
 	ComplexNumber a(re, im);
@@ -107,27 +107,27 @@ double ComplexNumber::abs() {
 	return sqrt((double)middle.get_num()/(double)middle.get_den());
 }
 
-RationalNumber ComplexNumber::getReal() {
+RationalNumber ComplexNumber::getReal() const{
 	return real;
 }
 
-RationalNumber ComplexNumber::getImagine() {
+RationalNumber ComplexNumber::getImagine() const{
 	return imagine;
 }
 
-void ComplexNumber::setReal(long long in) {
+void ComplexNumber::setReal(const long long &in) {
 	real = RationalNumber(in);
 }
 
-void ComplexNumber::setReal(RationalNumber in) {
+void ComplexNumber::setReal(const RationalNumber &in) {
 	real = in;
 }
 
-void ComplexNumber::setImagine(long long in) {
+void ComplexNumber::setImagine(const long long &in) {
 	imagine = RationalNumber(in);
 }
 
-void ComplexNumber::setImagine(RationalNumber in) {
+void ComplexNumber::setImagine(const RationalNumber &in) {
 	imagine = in;
 }
 
