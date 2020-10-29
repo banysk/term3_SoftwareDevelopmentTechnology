@@ -10,31 +10,31 @@ TEST_CASE("Test") {
 		RationalNumber a;
 		REQUIRE(a.get_num() == 0);
 		REQUIRE(a.get_den() == 1);
-		REQUIRE(a.isNegative() == false);
+		REQUIRE(a.getSign() == 1);
 	}
 	{
 		RationalNumber a(100, 1000);
 		REQUIRE(a.get_num() == 1);
 		REQUIRE(a.get_den() == 10);
-		REQUIRE(a.isNegative() == false);
+		REQUIRE(a.getSign() == 1);
 	}
 	{
 		RationalNumber a(83492, 72790);
 		REQUIRE(a.get_num() == 41746);
 		REQUIRE(a.get_den() == 36395);
-		REQUIRE(a.isNegative() == false);
+		REQUIRE(a.getSign() == 1);
 	}
 	{
 		RationalNumber a(-83492, 72790);
 		REQUIRE(a.get_num() == 41746);
 		REQUIRE(a.get_den() == 36395);
-		REQUIRE(a.isNegative() == true);
+		REQUIRE(a.getSign() == -1);
 	}
 	{
 		RationalNumber a(72790, -83492);
 		REQUIRE(a.get_num() == 36395);
 		REQUIRE(a.get_den() == 41746);
-		REQUIRE(a.isNegative() == true);
+		REQUIRE(a.getSign() == -1);
 	}
 
 	SECTION("RationalNumber.cpp", "[operator=]")
@@ -43,7 +43,7 @@ TEST_CASE("Test") {
 		b = a;
 		REQUIRE(a.get_num() == b.get_num());
 		REQUIRE(a.get_den() == b.get_den());
-		REQUIRE(a.isNegative() == b.isNegative());
+		REQUIRE(a.getSign() == b.getSign());
 	}
 	
 	SECTION("RationalNumber.cpp", "[operator+]")
@@ -54,15 +54,15 @@ TEST_CASE("Test") {
 		c1 = a1 + b1;
 		REQUIRE(c1.get_num() == 517447);
 		REQUIRE(c1.get_den() == 210123);
-		REQUIRE(c1.isNegative() == true);
+		REQUIRE(c1.getSign() == -1);
 		c2 = a2 + b2;
 		REQUIRE(c2.get_num() == 251657);
 		REQUIRE(c2.get_den() == 3100);
-		REQUIRE(c2.isNegative() == true);
+		REQUIRE(c2.getSign() == -1);
 		c3 = a3 + b3;
 		REQUIRE(c3.get_num() == 2);
 		REQUIRE(c3.get_den() == 1);
-		REQUIRE(c3.isNegative() == false);
+		REQUIRE(c3.getSign() == 1);
 	}
 
 	SECTION("RationalNumber.cpp", "[operator-]")
@@ -73,15 +73,15 @@ TEST_CASE("Test") {
 		c1 = a1 - b1;
 		REQUIRE(c1.get_num() == 744553);
 		REQUIRE(c1.get_den() == 210123);
-		REQUIRE(c1.isNegative() == true);
+		REQUIRE(c1.getSign() == -1);
 		c2 = a2 - b2;
 		REQUIRE(c2.get_num() == 194493);
 		REQUIRE(c2.get_den() == 3100);
-		REQUIRE(c2.isNegative() == true);
+		REQUIRE(c2.getSign() == -1);
 		c3 = a3 - b3;
 		REQUIRE(c3.get_num() == 99);
 		REQUIRE(c3.get_den() == 50);
-		REQUIRE(c3.isNegative() == true);
+		REQUIRE(c3.getSign() == -1);
 	}
 
 	SECTION("RationalNumber.cpp", "[operator*]")
@@ -92,15 +92,15 @@ TEST_CASE("Test") {
 		c1 = a1 * b1;
 		REQUIRE(c1.get_num() == 341000);
 		REQUIRE(c1.get_den() == 210123);
-		REQUIRE(c1.isNegative() == true);
+		REQUIRE(c1.getSign() == -1);
 		c2 = a2 * b2;
 		REQUIRE(c2.get_num() == 4113503);
 		REQUIRE(c2.get_den() == 6200);
-		REQUIRE(c2.isNegative() == false);
+		REQUIRE(c2.getSign() == 1);
 		c3 = a3 * b3;
 		REQUIRE(c3.get_num() == 199);
 		REQUIRE(c3.get_den() == 10000);
-		REQUIRE(c3.isNegative() == false);
+		REQUIRE(c3.getSign() == 1);
 	}
 
 	SECTION("RationalNumber.cpp", "[operator/]")
@@ -111,15 +111,15 @@ TEST_CASE("Test") {
 		c1 = a1 / b1;
 		REQUIRE(c1.get_num() == 631000);
 		REQUIRE(c1.get_den() == 113553);
-		REQUIRE(c1.isNegative() == true);
+		REQUIRE(c1.getSign() == -1);
 		c2 = a2 / b2;
 		REQUIRE(c2.get_num() == 223075);
 		REQUIRE(c2.get_den() == 28582);
-		REQUIRE(c2.isNegative() == false);
+		REQUIRE(c2.getSign() == 1);
 		c3 = a3 / b3;
 		REQUIRE(c3.get_num() == 1);
 		REQUIRE(c3.get_den() == 199);
-		REQUIRE(c3.isNegative() == false);
+		REQUIRE(c3.getSign() == 1);
 	}
 
 	SECTION("RationalNumber.cpp", "[operator==]")
@@ -264,4 +264,6 @@ TEST_CASE("Test") {
 		REQUIRE(a.getReal() == RationalNumber(5, 1));
 		REQUIRE(a.getImagine() == RationalNumber(0, 1));
 	}
+	//fix is negative
+	//copypaste remove
 }

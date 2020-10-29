@@ -15,12 +15,12 @@
 
 <span style = "background-color:#dfd">ComplexNumber::ComplexNumber() {}</span>
 
-<span style = "background-color:#dfd">ComplexNumber::ComplexNumber(double re, double im) {
+<span style = "background-color:#dfd">ComplexNumber::ComplexNumber(const double &amp;re, const double &amp;im) {
 	real = RationalNumber(re * 1000, 1000);
 	imagine = RationalNumber(im * 1000, 1000);
 }</span>
 
-<span style = "background-color:#dfd">ComplexNumber::ComplexNumber(RationalNumber re, RationalNumber im) {
+<span style = "background-color:#dfd">ComplexNumber::ComplexNumber(const RationalNumber &amp;re, const RationalNumber &amp;im) {
 	real = re;
 	imagine = im;
 }</span>
@@ -30,8 +30,7 @@
 }</span>
 
 <span style = "background-color:#dfd">ComplexNumber&amp; ComplexNumber::operator+=(const ComplexNumber &amp;right) {
-	this-&gt;real = this-&gt;real + right.real;
-	this-&gt;imagine = this-&gt;imagine + right.imagine;
+	*this = *this + right;
 	return *this;
 }</span>
 
@@ -40,8 +39,7 @@
 }</span>
 
 <span style = "background-color:#dfd">ComplexNumber&amp; ComplexNumber::operator-=(const ComplexNumber &amp;right) {
-	this-&gt;real = this-&gt;real - right.real;
-	this-&gt;imagine = this-&gt;imagine - right.imagine;
+	*this = *this - right;
 	return *this;
 }</span>
 
@@ -50,9 +48,7 @@
 }</span>
 
 <span style = "background-color:#dfd">ComplexNumber&amp; ComplexNumber::operator*=(const ComplexNumber &amp;right) {
-	RationalNumber re = this-&gt;real, im = this-&gt;imagine;
-	this-&gt;real = re * right.real - im * right.imagine;
-	this-&gt;imagine = re * right.imagine + im * right.real;
+	*this = *this * right;
 	return *this;
 }</span>
 
@@ -63,9 +59,7 @@
 }</span>
 
 <span style = "background-color:#dfd">ComplexNumber&amp; ComplexNumber::operator/=(const ComplexNumber &amp;right) {
-	RationalNumber re = this-&gt;real, im = this-&gt;imagine;
-	this-&gt;real = ((re * right.real + im * right.imagine) / (right.real * right.real + right.imagine * right.imagine));
-	this-&gt;imagine = ((right.real * im - re * right.imagine) / (right.real * right.real + right.imagine * right.imagine));
+	*this = *this / right;
 	return *this;
 }</span>
 
@@ -89,14 +83,12 @@
 	return (left.real != right.real || left.imagine != right.imagine);
 }</span>
 
-<span style = "background-color:#dfd">ComplexNumber ComplexNumber::operator-() {
+<span style = "background-color:#dfd">ComplexNumber ComplexNumber::operator-() const{
 	RationalNumber re = this-&gt;real, im = this-&gt;imagine;
-	re.signReverse();
-	im.signReverse();
-	return ComplexNumber(re, im);
+	return ComplexNumber(-re, -im);
 }</span>
 
-<span style = "background-color:#dfd">ComplexNumber ComplexNumber::Pow(int p = 2) {
+<span style = "background-color:#dfd">ComplexNumber ComplexNumber::Pow(const int &amp;p = 2) const{
 	RationalNumber re = real;
 	RationalNumber im = imagine;
 	ComplexNumber a(re, im);
@@ -106,55 +98,55 @@
 	return a;
 }</span>
 
-<span style = "background-color:#dfd">double ComplexNumber::arg() {</span>
+<span style = "background-color:#dfd">double ComplexNumber::arg() const{</span>
 	double x, y;
-<span style = "background-color:#dfd">	real.isNegative() ? x = real.toDouble() * (-1) : x = real.toDouble();
-	imagine.isNegative() ? y = imagine.toDouble() * (-1) : y = imagine.toDouble();
+<span style = "background-color:#dfd">	x = real.toDouble() * real.getSign();
+	y = imagine.toDouble() * imagine.getSign();
 	return atan2(y, x);
 }</span>
 
-<span style = "background-color:#dfd">double ComplexNumber::abs() {
+<span style = "background-color:#dfd">double ComplexNumber::abs() const{
 	RationalNumber middle = real * real + imagine * imagine;
 	return sqrt((double)middle.get_num()/(double)middle.get_den());
 }</span>
 
-<span style = "background-color:#dfd">RationalNumber ComplexNumber::getReal() {
+<span style = "background-color:#dfd">RationalNumber ComplexNumber::getReal() const{
 	return real;
 }</span>
 
-<span style = "background-color:#dfd">RationalNumber ComplexNumber::getImagine() {
+<span style = "background-color:#dfd">RationalNumber ComplexNumber::getImagine() const{
 	return imagine;
 }</span>
 
-<span style = "background-color:#dfd">void ComplexNumber::setReal(long long in) {
+<span style = "background-color:#dfd">void ComplexNumber::setReal(const long long &amp;in) {
 	real = RationalNumber(in);
 }</span>
 
-<span style = "background-color:#dfd">void ComplexNumber::setReal(RationalNumber in) {
+<span style = "background-color:#dfd">void ComplexNumber::setReal(const RationalNumber &amp;in) {
 	real = in;
 }</span>
 
-<span style = "background-color:#dfd">void ComplexNumber::setImagine(long long in) {
+<span style = "background-color:#dfd">void ComplexNumber::setImagine(const long long &amp;in) {
 	imagine = RationalNumber(in);
 }</span>
 
-<span style = "background-color:#dfd">void ComplexNumber::setImagine(RationalNumber in) {
+<span style = "background-color:#dfd">void ComplexNumber::setImagine(const RationalNumber &amp;in) {
 	imagine = in;
 }</span>
 
-<span style = "background-color:#dfd">std::string ComplexNumber::toString() {
+<span style = "background-color:#dfd">std::string ComplexNumber::toString() const{
 	std::string out;
-	if (real.isNegative()) out += '-';
+	if (real.getSign() == -1) out += '-';
 	out += std::to_string(real.get_num());
 	if (real.get_den() != 1) out += '/' + std::to_string(real.get_den());
-	imagine.isNegative() ? out += '-' : out += '+';
+	imagine.getSign() == -1 ? out += '-' : out += '+';
 	out += std::to_string(imagine.get_num());
 	if (imagine.get_den() != 1) out += '/' + std::to_string(imagine.get_den());
 	out += 'i';
 	return out;
 }</span>
 
-<span style = "background-color:#dfd">std::ostream&amp; operator&lt;&lt;(std::ostream &amp;out, ComplexNumber &amp;complexnumber) {
+<span style = "background-color:#dfd">std::ostream&amp; operator&lt;&lt;(std::ostream &amp;out, const ComplexNumber &amp;complexnumber) {
 	out &lt;&lt; complexnumber.toString();
 	return out;
 }</span></pre>

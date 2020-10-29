@@ -19,8 +19,7 @@ ComplexNumber operator+(const ComplexNumber &left, const ComplexNumber &right) {
 }
 
 ComplexNumber& ComplexNumber::operator+=(const ComplexNumber &right) {
-	this->real = this->real + right.real;
-	this->imagine = this->imagine + right.imagine;
+	*this = *this + right;
 	return *this;
 }
 
@@ -29,8 +28,7 @@ ComplexNumber operator-(const ComplexNumber &left, const ComplexNumber &right) {
 }
 
 ComplexNumber& ComplexNumber::operator-=(const ComplexNumber &right) {
-	this->real = this->real - right.real;
-	this->imagine = this->imagine - right.imagine;
+	*this = *this - right;
 	return *this;
 }
 
@@ -39,9 +37,7 @@ ComplexNumber operator*(const ComplexNumber &left, const ComplexNumber &right) {
 }
 
 ComplexNumber& ComplexNumber::operator*=(const ComplexNumber &right) {
-	RationalNumber re = this->real, im = this->imagine;
-	this->real = re * right.real - im * right.imagine;
-	this->imagine = re * right.imagine + im * right.real;
+	*this = *this * right;
 	return *this;
 }
 
@@ -52,9 +48,7 @@ ComplexNumber operator/(const ComplexNumber &left, const ComplexNumber &right) {
 }
 
 ComplexNumber& ComplexNumber::operator/=(const ComplexNumber &right) {
-	RationalNumber re = this->real, im = this->imagine;
-	this->real = ((re * right.real + im * right.imagine) / (right.real * right.real + right.imagine * right.imagine));
-	this->imagine = ((right.real * im - re * right.imagine) / (right.real * right.real + right.imagine * right.imagine));
+	*this = *this / right;
 	return *this;
 }
 
@@ -78,14 +72,12 @@ bool operator!=(const ComplexNumber &left, const ComplexNumber &right) {
 	return (left.real != right.real || left.imagine != right.imagine);
 }
 
-ComplexNumber ComplexNumber::operator-() {
+ComplexNumber ComplexNumber::operator-() const{
 	RationalNumber re = this->real, im = this->imagine;
-	re.signReverse();
-	im.signReverse();
-	return ComplexNumber(re, im);
+	return ComplexNumber(-re, -im);
 }
 
-ComplexNumber ComplexNumber::Pow(const int &p = 2) {
+ComplexNumber ComplexNumber::Pow(const int &p = 2) const{
 	RationalNumber re = real;
 	RationalNumber im = imagine;
 	ComplexNumber a(re, im);
@@ -95,14 +87,14 @@ ComplexNumber ComplexNumber::Pow(const int &p = 2) {
 	return a;
 }
 
-double ComplexNumber::arg() {
+double ComplexNumber::arg() const{
 	double x, y;
-	real.isNegative() ? x = real.toDouble() * (-1) : x = real.toDouble();
-	imagine.isNegative() ? y = imagine.toDouble() * (-1) : y = imagine.toDouble();
+	x = real.toDouble() * real.getSign();
+	y = imagine.toDouble() * imagine.getSign();
 	return atan2(y, x);
 }
 
-double ComplexNumber::abs() {
+double ComplexNumber::abs() const{
 	RationalNumber middle = real * real + imagine * imagine;
 	return sqrt((double)middle.get_num()/(double)middle.get_den());
 }
@@ -131,19 +123,19 @@ void ComplexNumber::setImagine(const RationalNumber &in) {
 	imagine = in;
 }
 
-std::string ComplexNumber::toString() {
+std::string ComplexNumber::toString() const{
 	std::string out;
-	if (real.isNegative()) out += '-';
+	if (real.getSign() == -1) out += '-';
 	out += std::to_string(real.get_num());
 	if (real.get_den() != 1) out += '/' + std::to_string(real.get_den());
-	imagine.isNegative() ? out += '-' : out += '+';
+	imagine.getSign() == -1 ? out += '-' : out += '+';
 	out += std::to_string(imagine.get_num());
 	if (imagine.get_den() != 1) out += '/' + std::to_string(imagine.get_den());
 	out += 'i';
 	return out;
 }
 
-std::ostream& operator<<(std::ostream &out, ComplexNumber &complexnumber) {
+std::ostream& operator<<(std::ostream &out, const ComplexNumber &complexnumber) {
 	out << complexnumber.toString();
 	return out;
 }

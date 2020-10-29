@@ -13,14 +13,14 @@ long long lcm(const long long a, const long long b) {
 RationalNumber::RationalNumber() {
 	numerator = 0;
 	denominator = 1;
-	is_negative = false;
+	sign = 1;
 }
 
 RationalNumber::RationalNumber(const double &num, const double &den) {
 	if (den == 0)
 		throw std::invalid_argument("div by zero");
 	bool num_sign = (num < 0), den_sign = (den < 0);
-	is_negative = (num_sign + den_sign) % 2;
+	(num_sign + den_sign) % 2 ? sign = -1 : sign = 1;
 	num > 0 ? numerator = (long long)num : numerator = (long long)num * (-1);
 	den > 0 ? denominator = (long long)den : denominator = (long long)den * (-1);
 	long long devider = gcd(numerator, denominator);
@@ -28,48 +28,56 @@ RationalNumber::RationalNumber(const double &num, const double &den) {
 	denominator /= devider;
 }
 
+
+RationalNumber RationalNumber::operator-() const {
+	if (sign == 1)
+		return RationalNumber(-numerator, denominator);
+	else
+		return RationalNumber(numerator, denominator);
+}
+
 RationalNumber& RationalNumber::operator=(const RationalNumber &right) {
 	this->numerator = right.numerator;
 	this->denominator = right.denominator;
-	this->is_negative = right.is_negative;
+	this->sign = right.sign;
 	return *this;
 }
 
 RationalNumber operator+(const RationalNumber &left, const RationalNumber &right) {
 	long long multiple = lcm(left.denominator, right.denominator);
 	long long l, r;
-	left.is_negative ? l = multiple / left.denominator * left.numerator * -1 : l = multiple / left.denominator * left.numerator;
-	right.is_negative ? r = multiple / right.denominator * right.numerator * -1: r = multiple / right.denominator * right.numerator;
+	l = multiple / left.denominator * left.numerator * left.sign;
+	r = multiple / right.denominator * right.numerator * right.sign;
 	return RationalNumber(l + r, multiple);
 }
 
 RationalNumber operator-(const RationalNumber &left, const RationalNumber &right) {
 	long long multiple = lcm(left.denominator, right.denominator);
 	long long l, r;
-	left.is_negative ? l = multiple / left.denominator * left.numerator * -1 : l = multiple / left.denominator * left.numerator;
-	right.is_negative ? r = multiple / right.denominator * right.numerator * -1 : r = multiple / right.denominator * right.numerator;
+	l = multiple / left.denominator * left.numerator * left.sign;
+	r = multiple / right.denominator * right.numerator * right.sign;
 	return RationalNumber(l - r, multiple);
 }
 
 RationalNumber operator*(const RationalNumber &left, const RationalNumber &right) {
 	long long l, r;
-	left.is_negative ? l = left.numerator * -1 : l = left.numerator;
-	right.is_negative ? r = right.numerator * -1 : r = right.numerator;
+	l = left.numerator * left.sign;
+	r = right.numerator * right.sign;
 	return RationalNumber(l * r, left.denominator * right.denominator);
 }
 
 RationalNumber operator/(const RationalNumber &left, const RationalNumber &right) {
 	long long l, r;
-	left.is_negative ? l = left.numerator * -1 : l = left.numerator;
-	right.is_negative ? r = right.numerator * -1 : r = right.numerator;
+	l = left.numerator * left.sign;
+	r = right.numerator * right.sign;
 	return RationalNumber(l * right.denominator, left.denominator * r);
 }
 
 bool operator==(const RationalNumber &left, const RationalNumber &right) {
 	long long multiple = lcm(left.denominator, right.denominator);
 	long long l, r;
-	left.is_negative ? l = multiple / left.denominator * left.numerator * (-1) : l = multiple / left.denominator * left.numerator;
-	right.is_negative ? r = multiple / right.denominator * right.numerator * (-1) : r = multiple / right.denominator * right.numerator;
+	l = multiple / left.denominator * left.numerator * left.sign;
+	r = multiple / right.denominator * right.numerator * right.sign;
 	return (l == r);
 }
 
@@ -77,22 +85,18 @@ bool operator!=(const RationalNumber &left, const RationalNumber &right) {
 	return !(left == right);
 }
 
-long long RationalNumber::get_num() {
+long long RationalNumber::get_num() const{
 	return numerator;
 }
 
-long long RationalNumber::get_den() {
+long long RationalNumber::get_den() const{
 	return denominator;
 }
 
-bool RationalNumber::isNegative() {
-	return is_negative;
+short int RationalNumber::getSign() const{
+	return sign;
 }
 
-void RationalNumber::signReverse() {
-	is_negative = !is_negative;
-}
-
-double RationalNumber::toDouble() {
+double RationalNumber::toDouble() const{
 	return (((double)numerator) / (double)denominator);
 }

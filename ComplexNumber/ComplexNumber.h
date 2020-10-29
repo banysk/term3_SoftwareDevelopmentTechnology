@@ -19,18 +19,18 @@ public:
 	friend bool operator!=(const ComplexNumber &left, const ComplexNumber &right);
 	ComplexNumber& operator=(const ComplexNumber &right);
 	ComplexNumber& operator=(const double &right);
-	ComplexNumber operator-();
-	ComplexNumber Pow(const int &p);
-	double arg();
-	double abs();
+	ComplexNumber operator-() const;
+	ComplexNumber Pow(const int &p) const;
+	double arg() const;
+	double abs() const;
 	RationalNumber getReal() const;
 	RationalNumber getImagine() const;
 	void setReal(const long long &in);
 	void setReal(const RationalNumber &in);
 	void setImagine(const long long &in);
 	void setImagine(const RationalNumber &in);
-	std::string toString();
-	friend std::ostream& operator<<(std::ostream &out, ComplexNumber &complexnumber);
+	std::string toString() const;
+	friend std::ostream& operator<<(std::ostream &out, const ComplexNumber &complexnumber);
 private:
 	RationalNumber real;
 	RationalNumber imagine;

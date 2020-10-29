@@ -10,25 +10,28 @@
         <h4></h4>
         <pre class="prettyprint lang-cpp linenums">
 #include "RationalNumber.h"
+#include &lt;stdexcept&gt;
 #include &lt;string&gt;
 
-<span style = "background-color:#dfd">long long gcd(long long a, long long b) {
+<span style = "background-color:#dfd">long long gcd(const long long a, const long long b) {
 	return b ? gcd(b, a % b) : a;
 }</span>
 
-<span style = "background-color:#dfd">long long lcm(long long a, long long b) {
+<span style = "background-color:#dfd">long long lcm(const long long a, const long long b) {
 	return a / gcd(a, b) * b;
 }</span>
 
 <span style = "background-color:#dfd">RationalNumber::RationalNumber() {
 	numerator = 0;
 	denominator = 1;
-	is_negative = false;
+	sign = 1;
 }</span>
 
-<span style = "background-color:#dfd">RationalNumber::RationalNumber(double num, double den) {
-	bool num_sign = (num &lt; 0), den_sign = (den &lt; 0);
-	is_negative = (num_sign + den_sign) % 2;
+<span style = "background-color:#dfd">RationalNumber::RationalNumber(const double &amp;num, const double &amp;den) {
+	if (den == 0)</span>
+<span style = "background-color:#fdd">		throw std::invalid_argument("div by zero");</span>
+<span style = "background-color:#dfd">	bool num_sign = (num &lt; 0), den_sign = (den &lt; 0);
+	(num_sign + den_sign) % 2 ? sign = -1 : sign = 1;
 	num &gt; 0 ? numerator = (long long)num : numerator = (long long)num * (-1);
 	den &gt; 0 ? denominator = (long long)den : denominator = (long long)den * (-1);
 	long long devider = gcd(numerator, denominator);
@@ -36,48 +39,56 @@
 	denominator /= devider;
 }</span>
 
+
+<span style = "background-color:#dfd">RationalNumber RationalNumber::operator-() const {
+	if (sign == 1)
+		return RationalNumber(-numerator, denominator);</span>
+<span style = "background-color:#fdd">	else</span>
+<span style = "background-color:#dfd">		return RationalNumber(numerator, denominator);
+}</span>
+
 <span style = "background-color:#dfd">RationalNumber&amp; RationalNumber::operator=(const RationalNumber &amp;right) {
 	this-&gt;numerator = right.numerator;
 	this-&gt;denominator = right.denominator;
-	this-&gt;is_negative = right.is_negative;
+	this-&gt;sign = right.sign;
 	return *this;
 }</span>
 
 <span style = "background-color:#dfd">RationalNumber operator+(const RationalNumber &amp;left, const RationalNumber &amp;right) {
 	long long multiple = lcm(left.denominator, right.denominator);</span>
 	long long l, r;
-<span style = "background-color:#dfd">	left.is_negative ? l = multiple / left.denominator * left.numerator * -1 : l = multiple / left.denominator * left.numerator;
-	right.is_negative ? r = multiple / right.denominator * right.numerator * -1: r = multiple / right.denominator * right.numerator;
+<span style = "background-color:#dfd">	l = multiple / left.denominator * left.numerator * left.sign;
+	r = multiple / right.denominator * right.numerator * right.sign;
 	return RationalNumber(l + r, multiple);
 }</span>
 
 <span style = "background-color:#dfd">RationalNumber operator-(const RationalNumber &amp;left, const RationalNumber &amp;right) {
 	long long multiple = lcm(left.denominator, right.denominator);</span>
 	long long l, r;
-<span style = "background-color:#dfd">	left.is_negative ? l = multiple / left.denominator * left.numerator * -1 : l = multiple / left.denominator * left.numerator;
-	right.is_negative ? r = multiple / right.denominator * right.numerator * -1 : r = multiple / right.denominator * right.numerator;
+<span style = "background-color:#dfd">	l = multiple / left.denominator * left.numerator * left.sign;
+	r = multiple / right.denominator * right.numerator * right.sign;
 	return RationalNumber(l - r, multiple);
 }</span>
 
 <span style = "background-color:#dfd">RationalNumber operator*(const RationalNumber &amp;left, const RationalNumber &amp;right) {</span>
 	long long l, r;
-<span style = "background-color:#dfd">	left.is_negative ? l = left.numerator * -1 : l = left.numerator;
-	right.is_negative ? r = right.numerator * -1 : r = right.numerator;
+<span style = "background-color:#dfd">	l = left.numerator * left.sign;
+	r = right.numerator * right.sign;
 	return RationalNumber(l * r, left.denominator * right.denominator);
 }</span>
 
 <span style = "background-color:#dfd">RationalNumber operator/(const RationalNumber &amp;left, const RationalNumber &amp;right) {</span>
 	long long l, r;
-<span style = "background-color:#dfd">	left.is_negative ? l = left.numerator * -1 : l = left.numerator;
-	right.is_negative ? r = right.numerator * -1 : r = right.numerator;
+<span style = "background-color:#dfd">	l = left.numerator * left.sign;
+	r = right.numerator * right.sign;
 	return RationalNumber(l * right.denominator, left.denominator * r);
 }</span>
 
 <span style = "background-color:#dfd">bool operator==(const RationalNumber &amp;left, const RationalNumber &amp;right) {
 	long long multiple = lcm(left.denominator, right.denominator);</span>
 	long long l, r;
-<span style = "background-color:#dfd">	left.is_negative ? l = multiple / left.denominator * left.numerator * (-1) : l = multiple / left.denominator * left.numerator;
-	right.is_negative ? r = multiple / right.denominator * right.numerator * (-1) : r = multiple / right.denominator * right.numerator;
+<span style = "background-color:#dfd">	l = multiple / left.denominator * left.numerator * left.sign;
+	r = multiple / right.denominator * right.numerator * right.sign;
 	return (l == r);
 }</span>
 
@@ -85,23 +96,19 @@
 	return !(left == right);
 }</span>
 
-<span style = "background-color:#dfd">long long RationalNumber::get_num() {
+<span style = "background-color:#dfd">long long RationalNumber::get_num() const{
 	return numerator;
 }</span>
 
-<span style = "background-color:#dfd">long long RationalNumber::get_den() {
+<span style = "background-color:#dfd">long long RationalNumber::get_den() const{
 	return denominator;
 }</span>
 
-<span style = "background-color:#dfd">bool RationalNumber::isNegative() {
-	return is_negative;
+<span style = "background-color:#dfd">short int RationalNumber::getSign() const{
+	return sign;
 }</span>
 
-<span style = "background-color:#dfd">void RationalNumber::signReverse() {
-	is_negative = !is_negative;
-}</span>
-
-<span style = "background-color:#dfd">double RationalNumber::toDouble() {
+<span style = "background-color:#dfd">double RationalNumber::toDouble() const{
 	return (((double)numerator) / (double)denominator);
 }</span></pre>
         <hr />
