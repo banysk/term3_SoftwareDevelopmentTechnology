@@ -1,13 +1,13 @@
 #pragma once
 #include <string>
 
-long long gcd(long long a, long long b);
-long long lcm(long long a, long long b);
+long long gcd(const long long a, const long long b);
+long long lcm(const long long a, const long long b);
 
 class RationalNumber {
 public:
 	RationalNumber();
-	RationalNumber(double num, double den = 1);
+	RationalNumber(const double &num, const double &den = 1);
 	RationalNumber& operator=(const RationalNumber &right);
 	friend RationalNumber operator+(const RationalNumber &left, const RationalNumber &right);
 	friend RationalNumber operator-(const RationalNumber &left, const RationalNumber &right);
