@@ -1,11 +1,12 @@
 #include "RationalNumber.h"
+#include <stdexcept>
 #include <string>
 
-long long gcd(long long a, long long b) {
+long long gcd(const long long a, const long long b) {
 	return b ? gcd(b, a % b) : a;
 }
 
-long long lcm(long long a, long long b) {
+long long lcm(const long long a, const long long b) {
 	return a / gcd(a, b) * b;
 }
 
@@ -15,7 +16,9 @@ RationalNumber::RationalNumber() {
 	is_negative = false;
 }
 
-RationalNumber::RationalNumber(double num, double den) {
+RationalNumber::RationalNumber(const double &num, const double &den) {
+	if (den == 0)
+		throw std::invalid_argument("div by zero");
 	bool num_sign = (num < 0), den_sign = (den < 0);
 	is_negative = (num_sign + den_sign) % 2;
 	num > 0 ? numerator = (long long)num : numerator = (long long)num * (-1);
