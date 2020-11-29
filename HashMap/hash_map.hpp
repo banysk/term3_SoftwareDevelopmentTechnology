@@ -392,7 +392,7 @@ public:
                 break;
             }
             else if (_Ptr[hash].PtrToValue->first == x.first) {
-                _Data[hash] = x;
+                _Data[hash].second = x.second;
                 unique = false;
                 break;
             }
