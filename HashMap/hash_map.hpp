@@ -7,10 +7,27 @@
 
 namespace fefu
 {
+    // Статусы для Node
+    enum NodeStatus {
+        EMPTY,
+        PLACED,
+        REMOVED
+    };
+    // Структура, хранит в себе указатель на значение и статус
+    template <typename T>
+    struct Node {
+        T* PtrToValue;
+        NodeStatus Status;
+        Node() {
+            PtrToValue = nullptr;
+            Status = EMPTY;
+        }
+    };
 
 template<typename T>
 class allocator {
 public:
+    // using
     using size_type = std::size_t;
     using difference_type = std::ptrdiff_t;
     using pointer = T*;
@@ -18,70 +35,118 @@ public:
     using reference = typename std::add_lvalue_reference<T>::type;
     using const_reference = typename std::add_lvalue_reference<const T>::type;
     using value_type = T;
-
-    allocator() noexcept;
-	
-    allocator(const allocator&) noexcept;
-	
+    // методы
+    allocator() noexcept = default;
+    allocator(const allocator&) noexcept = default;
     template <class U>
-    allocator(const allocator<U>&) noexcept;
-	
-    ~allocator();
-
-    pointer allocate(size_type);
-	
-    void deallocate(pointer p, size_type n) noexcept;
-};
+    allocator(const allocator<U>&) noexcept {};
+    ~allocator() = default;
+    pointer allocate(size_type n) {
+        return static_cast<T*>(::operator new(n * sizeof(T)));
+    }
+    void deallocate(pointer p, size_type) noexcept {
+        ::operator delete(p);
+    }
+}; /// TESTED
 
 template<typename ValueType>
 class hash_map_iterator {
 public:
+    // using
     using iterator_category = std::forward_iterator_tag;
     using value_type = ValueType;
     using difference_type = std::ptrdiff_t;
     using reference = ValueType&;
     using pointer = ValueType*;
-
-    hash_map_iterator() noexcept;
-    hash_map_iterator(const hash_map_iterator& other) noexcept;
-
-    reference operator*() const;
-    pointer operator->() const;
-
-    // prefix ++
-    hash_map_iterator& operator++();
-    // postfix ++
-    hash_map_iterator operator++(int);
-
-    friend bool operator==(const hash_map_iterator<ValueType>&, const hash_map_iterator<ValueType>&);
-    friend bool operator!=(const hash_map_iterator<ValueType>&, const hash_map_iterator<ValueType>&);
-};
+    // методы
+    hash_map_iterator() noexcept = default;
+    hash_map_iterator(Node<value_type> &n) noexcept {
+        node = &n;
+    }
+    hash_map_iterator(const hash_map_iterator& other) noexcept {
+        node = other.node;
+    }
+    reference operator*() const {
+        if (node == nullptr || node->PtrToValue == nullptr) {
+            std::out_of_range("node || node->PtrToValue == nullptr");
+        }
+        else {
+            return *(node->PtrToValue);
+        }
+    }
+    pointer operator->() const {
+        return node->PtrToValue;
+    }
+    hash_map_iterator& operator++() {
+        node++;
+        return *this;
+    }
+    hash_map_iterator operator++(int) {
+        hash_map_iterator new_this = *this;
+        node++;
+        return new_this;
+    }
+    friend bool operator==(const hash_map_iterator<ValueType> &l, const hash_map_iterator<ValueType> &r) {
+        return (l.node == r.node);
+    }
+    friend bool operator!=(const hash_map_iterator<ValueType> &l, const hash_map_iterator<ValueType> &r) {
+        return !(l == r);
+    }
+    // поля
+    Node<value_type> *node;
+}; /// TESTED
 
 template<typename ValueType>
 class hash_map_const_iterator {
 // Shouldn't give non const references on value
 public:
+    // using
     using iterator_category = std::forward_iterator_tag;
     using value_type = ValueType;
     using difference_type = std::ptrdiff_t;
     using reference = const ValueType&;
     using pointer = const ValueType*;
+    // методы
+    hash_map_const_iterator() noexcept = default;
+    hash_map_const_iterator(Node<value_type> &n) noexcept {
+        node = &n;
+    }
+    hash_map_const_iterator(const hash_map_const_iterator &other) noexcept {
+        node = other.node;
+    }
+    hash_map_const_iterator(const hash_map_iterator<ValueType> &other) noexcept {
+        node = other.node;
+    }
+    reference operator*() const {
+        if (node == nullptr || node->PtrToValue == nullptr) {
+            std::out_of_range("node || node->PtrToValue == nullptr");
+        }
+        else {
+            return *(node->PtrToValue);
+        }
+    }
+    pointer operator->() const {
+        return node->PtrToValue;
+    }
+    hash_map_const_iterator& operator++() {
+        node++;
+        return *this;
+    }
+    hash_map_const_iterator operator++(int) {
+        hash_map_const_iterator new_this = *this;
+        node++;
+        return new_this;
+    }
+    friend bool operator==(const hash_map_const_iterator<ValueType> &l, const hash_map_const_iterator<ValueType> &r) {
+        return (l.node == r.node);
+    }
+    friend bool operator!=(const hash_map_const_iterator<ValueType> &l, const hash_map_const_iterator<ValueType> &r) {
+        return !(l == r);
+    }
+    // поля
+    Node<value_type> *node;
+}; /// TESTED
 
-    hash_map_const_iterator() noexcept;
-    hash_map_const_iterator(const hash_map_const_iterator& other) noexcept;
-    hash_map_const_iterator(const hash_map_iterator<ValueType>& other) noexcept;
-
-    reference operator*() const;
-    pointer operator->() const;
-
-    // prefix ++
-    hash_map_const_iterator& operator++();
-    // postfix ++
-    hash_map_const_iterator operator++(int);
-
-    friend bool operator==(const hash_map_const_iterator<ValueType>&, const hash_map_const_iterator<ValueType>&);
-    friend bool operator!=(const hash_map_const_iterator<ValueType>&, const hash_map_const_iterator<ValueType>&);
-};
 template<typename K, typename T,
 	   typename Hash = std::hash<K>,
 	   typename Pred = std::equal_to<K>,
@@ -89,6 +154,7 @@ template<typename K, typename T,
 class hash_map
 {
 public:
+    // using
     using key_type = K;
     using mapped_type = T;
     using hasher = Hash;
@@ -100,15 +166,27 @@ public:
     using iterator = hash_map_iterator<value_type>;
     using const_iterator = hash_map_const_iterator<value_type>;
     using size_type = std::size_t;
-
-    /// Default constructor.
-    hash_map() = default;
-
-    /**
-     *  @brief  Default constructor creates no elements.
-     *  @param n  Minimal initial number of buckets.
-     */
-    explicit hash_map(size_type n);
+    // методы
+    hash_map() noexcept {
+        _Deallocated = true;
+        _Size = 0;
+        _Capacity = 0;
+        _Data = nullptr;
+    } /// TESTED
+    explicit hash_map(size_type n) {
+        _Deallocated = true;
+        _Size = 0;
+        _Capacity = n;
+        _Data = nullptr;
+        if (n > 0) {
+            _Deallocated = false;
+            _Data = _Alloc.allocate(n);
+            _Ptr.resize(n);
+            for (int i = 0; i < _Capacity; i++) {
+                _Ptr[i].PtrToValue = &_Data[i];
+            }
+        }
+    } /// TESTED
 
     /**
      *  @brief  Builds an %hash_map from a range.
@@ -302,7 +380,26 @@ public:
     */
     std::pair<iterator, bool> insert(const value_type& x);
 
-    std::pair<iterator, bool> insert(value_type&& x);
+    std::pair<iterator, bool> insert(value_type&& x) {
+        int hashed = _Hash(x.first);
+        int hash;
+        bool unique = true;
+        for (int i = 0; i < _Capacity; i++) {
+            hash = (abs(hashed) + i) % _Capacity;
+            if (_Ptr[hash].Status == EMPTY || _Ptr[hash].Status == REMOVED) {
+                new (&_Data[hash]) value_type(x);
+                _Ptr[hash].Status = PLACED;
+                break;
+            }
+            else if (_Ptr[hash].PtrToValue->first == x.first) {
+                _Data[hash] = x;
+                unique = false;
+                break;
+            }
+        }
+        std::pair<iterator, bool> pair(iterator(_Ptr[hash]), unique);
+        return pair;
+    }
 
     //@}
 
@@ -555,6 +652,17 @@ public:
     void reserve(size_type n);
 
     bool operator==(const hash_map& other) const;
+
+private:
+    // поля
+    bool _Deallocated; // освобождена память?
+    int _Size; // количество элементов
+    int _Capacity; // вместительность 
+    value_type *_Data; // указатель на память
+    std::vector<Node<value_type>> _Ptr; // информация об элементах _Data
+    Hash _Hash; // хеш функция
+    Pred _Pred; // функция сравнения
+    Alloc _Alloc; // аллокатор
 };
 
 } // namespace fefu
