@@ -81,12 +81,15 @@ public:
         return node->PtrToValue;
     }
     hash_map_iterator& operator++() {
-        node++;
+        ++node;
+        while (node->PtrToValue == nullptr || node->Status != PLACED) {
+            ++node;
+        }
         return *this;
     }
     hash_map_iterator operator++(int) {
         hash_map_iterator new_this = *this;
-        node++;
+        operator++();
         return new_this;
     }
     friend bool operator==(const hash_map_iterator<ValueType> &l, const hash_map_iterator<ValueType> &r) {
@@ -113,7 +116,7 @@ public:
     using pointer = const ValueType*;
     // методы
     hash_map_const_iterator() noexcept = default;
-    hash_map_const_iterator(Node<value_type> &n) noexcept {
+    hash_map_const_iterator(const Node<value_type> &n) noexcept {
         node = &n;
     }
     hash_map_const_iterator(const hash_map_const_iterator &other) noexcept {
@@ -123,10 +126,10 @@ public:
         node = other.node;
     }
     reference operator*() const {
-        if (node == nullptr || node->PtrToValue == nullptr) {
+        if (node == nullptr || node->PtrToValue == nullptr || node->Status != PLACED) {
             std::out_of_range("node || node->PtrToValue == nullptr");
         }
-        else if (node->Status == PLACED){
+        else {
             return *(node->PtrToValue);
         }
     }
@@ -134,14 +137,21 @@ public:
         return node->PtrToValue;
     }
     hash_map_const_iterator& operator++() {
-        node++;
+        while (node == nullptr || node->Status != PLACED) {
+            node++;
+        }
         return *this;
     }
-    hash_map_const_iterator operator++(int) {
-        hash_map_const_iterator new_this = *this;
-        node++;
-        return new_this;
-    }
+    //hash_map_const_iterator operator++(int) {
+    //    if (node == nullptr || node->Status != PLACED) {
+    //        while (node == nullptr || node->Status != PLACED) {
+    //            node++;
+    //        }
+    //    }
+    //    hash_map_const_iterator new_this = *this;
+    //    operator++();
+    //    return new_this;
+    //}
     friend bool operator==(const hash_map_const_iterator<ValueType> &l, const hash_map_const_iterator<ValueType> &r) {
         return (l.node == r.node);
     }
@@ -151,7 +161,7 @@ public:
 
 private:
     // поля
-    Node<value_type> *node;
+    const Node<value_type> *node;
 }; /// TESTED
 
 template<typename K, typename T,
@@ -189,9 +199,9 @@ public:
         _Data = nullptr;
         if (n > 0) {
             _Deallocated = false;
-            _Data = _Alloc.allocate(n);
-            _Ptr.resize(n);
-            for (int i = 0; i < _Capacity; i++) {
+            _Data = _Alloc.allocate(n + 1);
+            _Ptr.resize(n + 1);
+            for (int i = 0; i < _Capacity + 1; i++) {
                 _Ptr[i].PtrToValue = &_Data[i];
             }
         }
@@ -306,7 +316,9 @@ public:
             std::out_of_range("container_size is 0");
         }
         else {
-            return iterator(_Ptr[0]);
+            int i = -1;
+            while (_Ptr[++i].Status != PLACED);
+            return iterator(_Ptr[i]);
         }
     }
 
@@ -315,23 +327,25 @@ public:
      *  Returns a read-only (constant) iterator that points to the first
      *  element in the %hash_map.
      */
-    const_iterator begin() const noexcept {
-        if (_Capacity == 0) {
-            std::out_of_range("container_size is 0");
-        }
-        else {
-            return const_iterator(_Ptr[0]);
-        }
-    }
+    //const_iterator begin() const noexcept {
+    //    if (_Capacity == 0) {
+    //        std::out_of_range("container_size is 0");
+    //    }
+    //    else {
+    //        int i = -1;
+    //        while (_Ptr[++i].Status != PLACED) {};
+    //        return const_iterator(_Ptr[i]);
+    //    }
+    //}
 
-    const_iterator cbegin() const noexcept {
-        if (_Capacity == 0) {
-            std::out_of_range("container_size is 0");
-        }
-        else {
-            return const_iterator(_Ptr[0]);
-        }
-    }
+    //const_iterator cbegin() const noexcept {
+    //    if (_Capacity == 0) {
+    //        std::out_of_range("container_size is 0");
+    //    }
+    //    else {
+    //        return const_iterator(_Ptr[0]);
+    //    }
+    //}
 
     /**
      *  Returns a read/write iterator that points one past the last element in
@@ -342,7 +356,8 @@ public:
             std::out_of_range("container_size is 0");
         }
         else {
-            return iterator(_Ptr[_Capacity-1]);
+            _Ptr[_Capacity].Status = PLACED;
+            return iterator(_Ptr[_Capacity]);
         }
     }
 
@@ -351,24 +366,24 @@ public:
      *  Returns a read-only (constant) iterator that points one past the last
      *  element in the %hash_map.
      */
-    const_iterator end() const noexcept {
-        if (_Capacity == 0) {
-            std::out_of_range("container_size is 0");
-        }
-        else {
-            return const_iterator(_Ptr[_Capacity - 1]);
-        }
-    }
+    //const_iterator end() const noexcept {
+    //    if (_Capacity == 0) {
+    //        std::out_of_range("container_size is 0");
+    //    }
+    //    else {
+    //        return const_iterator(_Ptr[_Capacity - 1]);
+    //    }
+    //}
 
 
-    const_iterator cend() const noexcept {
-        if (_Capacity == 0) {
-            std::out_of_range("container_size is 0");
-        }
-        else {
-            return const_iterator(_Ptr[_Capacity - 1]);
-        }
-    }
+    //const_iterator cend() const noexcept {
+    //    if (_Capacity == 0) {
+    //        std::out_of_range("container_size is 0");
+    //    }
+    //    else {
+    //        return const_iterator(_Ptr[_Capacity - 1]);
+    //    }
+    //}
     //@}
 
     // modifiers.
@@ -583,7 +598,7 @@ public:
 
     void clear() noexcept {
         if (!_Deallocated) {
-            _Alloc.deallocate(_Data, _Capacity);
+            _Alloc.deallocate(_Data, _Capacity + 1);
             _Ptr.clear();
         }
         _Deallocated = true;
@@ -727,11 +742,11 @@ public:
             value_type* Data = _Data;
             std::vector<Node<value_type>> Ptr(_Ptr);
             _Capacity = NewCapacity;
-            _Data = _Alloc.allocate(_Capacity);
+            _Data = _Alloc.allocate(_Capacity + 1);
             _Ptr.clear();
-            _Ptr.resize(_Capacity);
+            _Ptr.resize(_Capacity + 1);
             _Size = 0;
-            for (int i = 0; i < _Capacity; i++) {
+            for (int i = 0; i < _Capacity + 1; i++) {
                 _Ptr[i].PtrToValue = &_Data[i];
             }
             for (int i = 0; i < Ptr.size(); i++) {

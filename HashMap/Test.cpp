@@ -7,8 +7,7 @@
 using namespace fefu;
 
 TEST_CASE("Test") {
-    std::vector<std::string> data;
-
+    /*
     SECTION("allocator") {
         allocator<int> a;
         int* var = a.allocate(10);
@@ -36,10 +35,9 @@ TEST_CASE("Test") {
         REQUIRE(++it1 == ++it2);
         it1++;
         REQUIRE(it1 == ++it2);
-
     }
-
-
+    
+    
     SECTION("hash_map_const_iterator") {
         Node<std::pair<const std::string, int>> node;
         std::pair<const std::string, int> pair("test", 1);
@@ -57,6 +55,7 @@ TEST_CASE("Test") {
         it2++;
         REQUIRE(it2 == ++it3);
     }
+
 
     SECTION("hash_map", "[hash_map()]") {
         hash_map<std::string, int> hm;
@@ -125,8 +124,8 @@ TEST_CASE("Test") {
         end = hm.end();
         begin_c = hm.begin();
         end_c = hm.end();
-        //cbegin = hm.cbegin();
-        //cend = hm.cend();
+        cbegin = hm.cbegin();
+        cend = hm.cend();
 
         // (*begin).first = "test"; // ERROR
         // (*begin).second = 1; // OK
@@ -282,23 +281,27 @@ TEST_CASE("Test") {
     SECTION("hash_map", "[size_type bucket(const key_type& _K) const]") {
 
     }
-
+    */
     SECTION("hash_map", "[void max_load_factor(float z)]") {
-        std::ofstream fout("out.txt");
-        using _pair = std::pair<hash_map_iterator<std::pair<const std::string, int>>, bool>;
         hash_map<std::string, int> hm;
         hm.reserve(100);
         for (int i = 0; i < 100; i++) {
             hm.insert({ std::to_string(i), i });
-            fout << hm.size() << "/" << hm.max_size() << ":" << hm.load_factor() << "\n";
         }
         hm.max_load_factor(0.1f);
-        REQUIRE(hm.max_load_factor() == 0.1f);
-        REQUIRE(hm.load_factor() == 0.1f);
-        REQUIRE(hm.size() == 100);
-        REQUIRE(hm.max_size() == 1000);
-    }
+        //REQUIRE(hm.max_load_factor() == 0.1f);
+        //REQUIRE(hm.load_factor() == 0.1f);
+        //REQUIRE(hm.size() == 100);
+        //REQUIRE(hm.max_size() == 1000);
+        //hm.max_load_factor(1);
+        std::ofstream fout("out.txt");
+        for (auto item : hm) {
+            fout << "\"" << item.first << "\":=" << item.second << "\n";
+        }
 
+        //REQUIRE(hm.begin() == hm.end());
+    }
+    /*
     SECTION("hash_map", "[void rehash(size_type n)]") {
         using _pair = std::pair<hash_map_iterator<std::pair<const std::string, int>>, bool>;
         hash_map<std::string, int> hm;
@@ -323,4 +326,5 @@ TEST_CASE("Test") {
     SECTION("hash_map", "[bool operator==(const hash_map& other) const]") {
 
     }
+    */
 }
