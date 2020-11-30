@@ -15,6 +15,7 @@ TEST_CASE("Test") {
         a.deallocate(var, 10);
     }
 
+    
     SECTION("hash_map_iterator") {
         Node<std::pair<const std::string, int>> node;
         std::pair<const std::string, int> pair("test", 1);
@@ -45,9 +46,7 @@ TEST_CASE("Test") {
         node.PtrToValue = &pair;
         node.Status = PLACED;
         hash_map_iterator<std::pair<const std::string, int>> it1(node);
-        hash_map_const_iterator<std::pair<const std::string, int>> it(node), it2(it1), it3(it1);
-        // (it.operator->())->first = "new"; *ERROR, it is const
-        // (it.operator->())->second = 10; *ERROR, it is const
+        hash_map_const_iterator<std::pair<const std::string, int>> it2(it1), it3(it1);
         REQUIRE(it2 == it2);
         REQUIRE(*it2 == pair);
         REQUIRE(*it3 == pair);
@@ -129,23 +128,23 @@ TEST_CASE("Test") {
         //cbegin = hm.cbegin();
         //cend = hm.cend();
 
-        //(*begin).first = "test"; ERROR
-        //(*begin).second = 1; OK
+        // (*begin).first = "test"; // ERROR
+        // (*begin).second = 1; // OK
 
-        //(*end).first = "test"; ERROR
-        //(*end).second = 1; OK
+        // (*end).first = "test"; // ERROR
+        // (*end).second = 1; // OK
 
-        //(*begin_c).first = "test"; ERROR
-        //(*begin_c).second = 1; ERROR
+        // (*begin_c).first = "test"; // ERROR
+        // (*begin_c).second = 1; // ERROR
 
-        //(*end_c).first = "test"; ERROR
-        //(*end_c).second = 1; ERROR
+        // (*end_c).first = "test"; // ERROR
+        // (*end_c).second = 1; // ERROR
 
-        //(*cbegin).first = "test"; ERROR
-        //(*cbegin).second = 1; ERROR
+        // (*cbegin).first = "test"; // ERROR
+        // (*cbegin).second = 1; // ERROR
 
-        //(*cend).first = "test"; ERROR
-        //(*cend).second = 1; ERROR
+        // (*cend).first = "test"; // ERROR
+        // (*cend).second = 1; // ERROR
     }
 
     SECTION("hash_map", "[std::pair<iterator, bool> emplace(_Args&&... args)]") {

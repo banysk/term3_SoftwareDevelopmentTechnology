@@ -303,7 +303,7 @@ public:
      */
     iterator begin() noexcept {
         if (_Capacity == 0) {
-            std::out_of_range("container is empty");
+            std::out_of_range("container_size is 0");
         }
         else {
             return iterator(_Ptr[0]);
@@ -317,7 +317,7 @@ public:
      */
     const_iterator begin() const noexcept {
         if (_Capacity == 0) {
-            std::out_of_range("container is empty");
+            std::out_of_range("container_size is 0");
         }
         else {
             return const_iterator(_Ptr[0]);
@@ -326,7 +326,7 @@ public:
 
     const_iterator cbegin() const noexcept {
         if (_Capacity == 0) {
-            std::out_of_range("container is empty");
+            std::out_of_range("container_size is 0");
         }
         else {
             return const_iterator(_Ptr[0]);
@@ -339,7 +339,7 @@ public:
      */
     iterator end() noexcept {
         if (_Capacity == 0) {
-            std::out_of_range("container is empty");
+            std::out_of_range("container_size is 0");
         }
         else {
             return iterator(_Ptr[_Capacity-1]);
@@ -353,7 +353,7 @@ public:
      */
     const_iterator end() const noexcept {
         if (_Capacity == 0) {
-            std::out_of_range("container is empty");
+            std::out_of_range("container_size is 0");
         }
         else {
             return const_iterator(_Ptr[_Capacity - 1]);
@@ -363,7 +363,7 @@ public:
 
     const_iterator cend() const noexcept {
         if (_Capacity == 0) {
-            std::out_of_range("container is empty");
+            std::out_of_range("container_size is 0");
         }
         else {
             return const_iterator(_Ptr[_Capacity - 1]);
