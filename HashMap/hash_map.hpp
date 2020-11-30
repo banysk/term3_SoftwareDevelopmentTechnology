@@ -58,6 +58,9 @@ public:
     using difference_type = std::ptrdiff_t;
     using reference = ValueType&;
     using pointer = ValueType*;
+    // friend
+    template<typename>
+    friend class hash_map_const_iterator;
     // методы
     hash_map_iterator() noexcept = default;
     hash_map_iterator(Node<value_type> &n) noexcept {
@@ -92,6 +95,8 @@ public:
     friend bool operator!=(const hash_map_iterator<ValueType> &l, const hash_map_iterator<ValueType> &r) {
         return !(l == r);
     }
+
+private:
     // поля
     Node<value_type> *node;
 }; /// TESTED
@@ -121,7 +126,7 @@ public:
         if (node == nullptr || node->PtrToValue == nullptr) {
             std::out_of_range("node || node->PtrToValue == nullptr");
         }
-        else {
+        else if (node->Status == PLACED){
             return *(node->PtrToValue);
         }
     }
@@ -143,6 +148,8 @@ public:
     friend bool operator!=(const hash_map_const_iterator<ValueType> &l, const hash_map_const_iterator<ValueType> &r) {
         return !(l == r);
     }
+
+private:
     // поля
     Node<value_type> *node;
 }; /// TESTED
@@ -171,12 +178,14 @@ public:
         _Deallocated = true;
         _Size = 0;
         _Capacity = 0;
+        _LoadFactor = 0.5;
         _Data = nullptr;
     } /// TESTED
     explicit hash_map(size_type n) {
         _Deallocated = true;
         _Size = 0;
         _Capacity = n;
+        _LoadFactor = 0.5;
         _Data = nullptr;
         if (n > 0) {
             _Deallocated = false;
@@ -186,6 +195,9 @@ public:
                 _Ptr[i].PtrToValue = &_Data[i];
             }
         }
+    } /// TESTED
+    ~hash_map() {
+        clear();
     } /// TESTED
 
     /**
@@ -212,7 +224,14 @@ public:
      *  @brief Creates an %hash_map with no elements.
      *  @param a An allocator object.
      */
-    explicit hash_map(const allocator_type& a);
+    explicit hash_map(const allocator_type& a) {
+        _Deallocated = true;
+        _Size = 0;
+        _Capacity = 0;
+        _LoadFactor = 0.5;
+        _Data = nullptr;
+        _Alloc = a;
+    } /// TESTED
 
     /*
     *  @brief Copy constructor with allocator argument.
@@ -260,19 +279,21 @@ public:
      */
     hash_map& operator=(std::initializer_list<value_type> l);
 
-    ///  Returns the allocator object used by the %hash_map.
-    allocator_type get_allocator() const noexcept;
+    allocator_type get_allocator() const noexcept {
+        return _Alloc;
+    } /// TESTED
 
     // size and capacity:
 
-    ///  Returns true if the %hash_map is empty.
-    bool empty() const noexcept;
-
-    ///  Returns the size of the %hash_map.
-    size_type size() const noexcept;
-
-    ///  Returns the maximum size of the %hash_map.
-    size_type max_size() const noexcept;
+    bool empty() const noexcept {
+        return (_Size == 0);
+    } /// TESTED
+    size_type size() const noexcept {
+        return _Size;
+    } /// TESTED
+    size_type max_size() const noexcept {
+        return _Capacity;
+    } /// TESTED
 
     // iterators.
 
@@ -280,31 +301,74 @@ public:
      *  Returns a read/write iterator that points to the first element in the
      *  %hash_map.
      */
-    iterator begin() noexcept;
+    iterator begin() noexcept {
+        if (_Capacity == 0) {
+            std::out_of_range("container is empty");
+        }
+        else {
+            return iterator(_Ptr[0]);
+        }
+    }
 
     //@{
     /**
      *  Returns a read-only (constant) iterator that points to the first
      *  element in the %hash_map.
      */
-    const_iterator begin() const noexcept;
+    const_iterator begin() const noexcept {
+        if (_Capacity == 0) {
+            std::out_of_range("container is empty");
+        }
+        else {
+            return const_iterator(_Ptr[0]);
+        }
+    }
 
-    const_iterator cbegin() const noexcept;
+    const_iterator cbegin() const noexcept {
+        if (_Capacity == 0) {
+            std::out_of_range("container is empty");
+        }
+        else {
+            return const_iterator(_Ptr[0]);
+        }
+    }
 
     /**
      *  Returns a read/write iterator that points one past the last element in
      *  the %hash_map.
      */
-    iterator end() noexcept;
+    iterator end() noexcept {
+        if (_Capacity == 0) {
+            std::out_of_range("container is empty");
+        }
+        else {
+            return iterator(_Ptr[_Capacity-1]);
+        }
+    }
 
     //@{
     /**
      *  Returns a read-only (constant) iterator that points one past the last
      *  element in the %hash_map.
      */
-    const_iterator end() const noexcept;
+    const_iterator end() const noexcept {
+        if (_Capacity == 0) {
+            std::out_of_range("container is empty");
+        }
+        else {
+            return const_iterator(_Ptr[_Capacity - 1]);
+        }
+    }
 
-    const_iterator cend() const noexcept;
+
+    const_iterator cend() const noexcept {
+        if (_Capacity == 0) {
+            std::out_of_range("container is empty");
+        }
+        else {
+            return const_iterator(_Ptr[_Capacity - 1]);
+        }
+    }
     //@}
 
     // modifiers.
@@ -361,34 +425,22 @@ public:
     template <typename... _Args>
     std::pair<iterator, bool> try_emplace(key_type&& k, _Args&&... args);
 
-    //@{
-    /**
-     *  @brief Attempts to insert a std::pair into the %hash_map.
-     *  @param x Pair to be inserted (see std::make_pair for easy
-     *	     creation of pairs).
-    *
-    *  @return  A pair, of which the first element is an iterator that
-    *           points to the possibly inserted pair, and the second is
-    *           a bool that is true if the pair was actually inserted.
-    *
-    *  This function attempts to insert a (key, value) %pair into the
-    *  %hash_map. An %hash_map relies on unique keys and thus a
-    *  %pair is only inserted if its first element (the key) is not already
-    *  present in the %hash_map.
-    *
-    *  Insertion requires amortized constant time.
-    */
-    std::pair<iterator, bool> insert(const value_type& x);
-
-    std::pair<iterator, bool> insert(value_type&& x) {
+    std::pair<iterator, bool> insert(const value_type& x) {
+        if (_Capacity == 0) {
+            rehash(2 * ceil((float)1 / _LoadFactor));
+        }
         int hashed = _Hash(x.first);
         int hash;
         bool unique = true;
         for (int i = 0; i < _Capacity; i++) {
             hash = (abs(hashed) + i) % _Capacity;
             if (_Ptr[hash].Status == EMPTY || _Ptr[hash].Status == REMOVED) {
+                if ((float)(_Size + 1) / _Capacity > _LoadFactor) {
+                    rehash(2 * ceil((float)(_Size + 1) / _LoadFactor));
+                }
                 new (&_Data[hash]) value_type(x);
                 _Ptr[hash].Status = PLACED;
+                _Size++;
                 break;
             }
             else if (_Ptr[hash].PtrToValue->first == x.first) {
@@ -399,7 +451,34 @@ public:
         }
         std::pair<iterator, bool> pair(iterator(_Ptr[hash]), unique);
         return pair;
-    }
+    } /// TESTED
+    std::pair<iterator, bool> insert(value_type&& x) {
+        if (_Capacity == 0) {
+            rehash(2 * ceil((float)1 / _LoadFactor));
+        }
+        int hashed = _Hash(x.first);
+        int hash;
+        bool unique = true;
+        for (int i = 0; i < _Capacity; i++) {
+            hash = (abs(hashed) + i) % _Capacity;
+            if (_Ptr[hash].Status == EMPTY || _Ptr[hash].Status == REMOVED) {
+                if ((float)(_Size + 1) / _Capacity > _LoadFactor) {
+                    rehash(2 * ceil((float)(_Size + 1) / _LoadFactor));
+                }
+                new (&_Data[hash]) value_type(x);
+                _Ptr[hash].Status = PLACED;
+                _Size++;
+                break;
+            }
+            else if (_Ptr[hash].PtrToValue->first == x.first) {
+                _Data[hash].second = x.second;
+                unique = false;
+                break;
+            }
+        }
+        std::pair<iterator, bool> pair(iterator(_Ptr[hash]), unique);
+        return pair;
+    } /// TESTED
 
     //@}
 
@@ -502,13 +581,16 @@ public:
      */
     iterator erase(const_iterator first, const_iterator last);
 
-    /**
-     *  Erases all elements in an %hash_map.
-     *  Note that this function only erases the elements, and that if the
-     *  elements themselves are pointers, the pointed-to memory is not touched
-     *  in any way.  Managing the pointer is the user's responsibility.
-     */
-    void clear() noexcept;
+    void clear() noexcept {
+        if (!_Deallocated) {
+            _Alloc.deallocate(_Data, _Capacity);
+            _Ptr.clear();
+        }
+        _Deallocated = true;
+        _Size = 0;
+        _Capacity = 0;
+        _LoadFactor = 0.5;
+    } /// TESTED
 
     /**
      *  @brief  Swaps data with another %hash_map.
@@ -532,11 +614,15 @@ public:
 
     ///  Returns the hash functor object with which the %hash_map was
     ///  constructed.
-    Hash hash_function() const;
+    Hash hash_function() const {
+        return _Hash;
+    }
 
     ///  Returns the key comparison object with which the %hash_map was
     ///  constructed.
-    Pred key_eq() const;
+    Pred key_eq() const {
+        return _Pred;
+    }
 
     // lookup.
 
@@ -604,12 +690,10 @@ public:
     mapped_type& at(const key_type& k);
 
     const mapped_type& at(const key_type& k) const;
-    //@}
 
-    // bucket interface.
-
-    /// Returns the number of buckets of the %hash_map.
-    size_type bucket_count() const noexcept;
+    size_type bucket_count() const noexcept {
+        return _Size;
+    } /// TESTED
 
     /*
     * @brief  Returns the bucket index of a given element.
@@ -621,35 +705,48 @@ public:
     // hash policy.
 
     /// Returns the average number of elements per bucket.
-    float load_factor() const noexcept;
+    float load_factor() const noexcept {
+        if (_Size == 0) {
+            return 0;
+        }
+        else {
+            return (float)_Size / _Capacity;
+        }
+    } /// TESTED
 
-    /// Returns a positive number that the %hash_map tries to keep the
-    /// load factor less than or equal to.
-    float max_load_factor() const noexcept;
-
-    /**
-     *  @brief  Change the %hash_map maximum load factor.
-     *  @param  z The new maximum load factor.
-     */
-    void max_load_factor(float z);
-
-    /**
-     *  @brief  May rehash the %hash_map.
-     *  @param  n The new number of buckets.
-     *
-     *  Rehash will occur only if the new number of buckets respect the
-     *  %hash_map maximum load factor.
-     */
-    void rehash(size_type n);
-
-    /**
-     *  @brief  Prepare the %hash_map for a specified number of
-     *          elements.
-     *  @param  n Number of elements required.
-     *
-     *  Same as rehash(ceil(n / max_load_factor())).
-     */
-    void reserve(size_type n);
+    float max_load_factor() const noexcept {
+        return _LoadFactor;
+    } /// TESTED
+    void max_load_factor(float z) {
+        float tmp = z / _LoadFactor;
+        _LoadFactor = z;
+        rehash(ceil(_Capacity / tmp));
+    } /// TESTED
+    void rehash(size_type NewCapacity) {
+        if ((float)_Size / NewCapacity <= _LoadFactor) {
+            value_type* Data = _Data;
+            std::vector<Node<value_type>> Ptr(_Ptr);
+            _Capacity = NewCapacity;
+            _Data = _Alloc.allocate(_Capacity);
+            _Ptr.clear();
+            _Ptr.resize(_Capacity);
+            _Size = 0;
+            for (int i = 0; i < _Capacity; i++) {
+                _Ptr[i].PtrToValue = &_Data[i];
+            }
+            for (int i = 0; i < Ptr.size(); i++) {
+                if (Ptr[i].Status == PLACED) {
+                    insert({ Ptr[i].PtrToValue->first, Ptr[i].PtrToValue->second });
+                }
+            }
+            _Deallocated = false;
+            _Alloc.deallocate(Data, Ptr.size());
+            Ptr.clear();
+        }
+    } /// TESTED
+    void reserve(size_type n) {
+        rehash(ceil(n / _LoadFactor));
+    } /// TESTED
 
     bool operator==(const hash_map& other) const;
 
@@ -658,6 +755,7 @@ private:
     bool _Deallocated; // освобождена память?
     int _Size; // количество элементов
     int _Capacity; // вместительность 
+    float _LoadFactor; // коэффициент заполненности
     value_type *_Data; // указатель на память
     std::vector<Node<value_type>> _Ptr; // информация об элементах _Data
     Hash _Hash; // хеш функция
