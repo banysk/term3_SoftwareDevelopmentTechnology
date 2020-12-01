@@ -7,55 +7,11 @@
 using namespace fefu;
 
 TEST_CASE("Test") {
-    /*
     SECTION("allocator") {
         allocator<int> a;
         int* var = a.allocate(10);
         a.deallocate(var, 10);
     }
-
-    
-    SECTION("hash_map_iterator") {
-        Node<std::pair<const std::string, int>> node;
-        std::pair<const std::string, int> pair("test", 1);
-        node.PtrToValue = &pair;
-        node.Status = PLACED;
-        hash_map_iterator<std::pair<const std::string, int>> it(node), it1(node), it2(node);
-        // (it.operator->())->first = "new"; *ERROR, first is const
-        // (it.operator->())->second = 10; *OK, second is non const
-        (it.operator->())->second = 10; // *OK
-        REQUIRE((*it).first == "test");
-        REQUIRE((*it).second == 10);
-        REQUIRE(it1 == it2);
-        REQUIRE(*it1 == pair);
-        REQUIRE(*it2 == pair);
-        REQUIRE(it1.operator->() == &pair);
-        REQUIRE(it2.operator->() == &pair);
-        REQUIRE(it1++ == it2++);
-        REQUIRE(++it1 == ++it2);
-        it1++;
-        REQUIRE(it1 == ++it2);
-    }
-    
-    
-    SECTION("hash_map_const_iterator") {
-        Node<std::pair<const std::string, int>> node;
-        std::pair<const std::string, int> pair("test", 1);
-        node.PtrToValue = &pair;
-        node.Status = PLACED;
-        hash_map_iterator<std::pair<const std::string, int>> it1(node);
-        hash_map_const_iterator<std::pair<const std::string, int>> it2(it1), it3(it1);
-        REQUIRE(it2 == it2);
-        REQUIRE(*it2 == pair);
-        REQUIRE(*it3 == pair);
-        REQUIRE(it2.operator->() == &pair);
-        REQUIRE(it3.operator->() == &pair);
-        REQUIRE(it2++ == it3++);
-        REQUIRE(++it2 == ++it3);
-        it2++;
-        REQUIRE(it2 == ++it3);
-    }
-
 
     SECTION("hash_map", "[hash_map()]") {
         hash_map<std::string, int> hm;
@@ -63,6 +19,8 @@ TEST_CASE("Test") {
         REQUIRE(hm.max_size() == 0);
         REQUIRE(hm.load_factor() == 0.0f);
         REQUIRE(hm.empty() == true);
+        hm.hash_function();
+        hm.key_eq();
     }
 
     SECTION("hash_map", "[explicit hash_map(size_type n)]") {
@@ -73,15 +31,26 @@ TEST_CASE("Test") {
     }
 
     SECTION("hash_map", "[hash_map(InputIterator first, InputIterator last, size_type n = 0)]") {
-
+        hash_map<std::string, int> from(10);
+        for (int i = 0; i < 5; i++) {
+            from.insert({std::to_string(i), i});
+        }
+        auto b = from.begin(), e = from.end();
+        hash_map<std::string, int> to(b, e, 5);
+        REQUIRE(to.size() == 5);
     }
 
     SECTION("hash_map", "[hash_map(const hash_map &hm)]") {
-
+        std::pair<const std::string, int> a("1", 1), b("2", 2), c("3", 3), d("4", 4), e("5", 5);
+        hash_map<std::string, int> hm1({ a, b, c, d, e }, 5);
+        hash_map<std::string, int> hm2(hm1);
+        REQUIRE(hm1.size() == hm2.size());
     }
 
     SECTION("hash_map", "[hash_map(hash_map &&hm)]") {
-
+        std::pair<const std::string, int> a("1", 1), b("2", 2), c("3", 3), d("4", 4), e("5", 5);
+        hash_map<std::string, int> hm = move(hash_map<std::string, int>({a, b, c, d, e}));
+        REQUIRE(hm.size() == 5);
     }
 
     SECTION("hash_map", "[explicit hash_map(const allocator_type& a)]") {
@@ -92,15 +61,24 @@ TEST_CASE("Test") {
     }
 
     SECTION("hash_map", "[hash_map(const hash_map& umap, const allocator_type& a)]") {
-
+        std::pair<const std::string, int> a("1", 1), b("2", 2), c("3", 3), d("4", 4), e("5", 5);
+        hash_map<std::string, int> hm1({ a, b, c, d, e }, 5);
+        allocator<std::pair<const std::string, int>> alloc;
+        hash_map<std::string, int> hm2(hm1, alloc);
+        REQUIRE(hm1.size() == hm2.size());
     }
 
     SECTION("hash_map", "[hash_map(hash_map&& umap, const allocator_type& a)]") {
-
+        //std::pair<const std::string, int> a("1", 1), b("2", 2), c("3", 3), d("4", 4), e("5", 5);
+        //allocator<std::pair<const std::string, int>> alloc;
+        //hash_map<std::string, int> hm = move(hash_map<std::string, int>({ a, b, c, d, e }), alloc);
+        //REQUIRE(hm.size() == 5);
     }
 
     SECTION("hash_map", "[hash_map(std::initializer_list<value_type> l, size_type n = 0)]") {
-
+        std::pair<const std::string, int> a("1", 1), b("2", 2), c("3", 3), d("4", 4), e("5", 5);
+        hash_map<std::string, int> hm({ a, b, c, d, e }, 5);
+        REQUIRE(hm.size() == 5);
     }
 
     SECTION("hash_map", "[hash_map& operator=(const hash_map&)") {
@@ -112,38 +90,10 @@ TEST_CASE("Test") {
     }
 
     SECTION("hash_map", "[hash_map& operator=(std::initializer_list<value_type> l)]") {
-
-    }
-
-    SECTION("hash_map", "[iterators]") {
-        hash_map<std::string, int> hm(10);
-        hash_map_iterator<std::pair<const std::string, int>> begin, end;
-        hash_map_const_iterator<std::pair<const std::string, int>> begin_c, end_c;
-        hash_map_const_iterator<std::pair<const std::string, int>> cbegin, cend;
-        begin = hm.begin();
-        end = hm.end();
-        begin_c = hm.begin();
-        end_c = hm.end();
-        cbegin = hm.cbegin();
-        cend = hm.cend();
-
-        // (*begin).first = "test"; // ERROR
-        // (*begin).second = 1; // OK
-
-        // (*end).first = "test"; // ERROR
-        // (*end).second = 1; // OK
-
-        // (*begin_c).first = "test"; // ERROR
-        // (*begin_c).second = 1; // ERROR
-
-        // (*end_c).first = "test"; // ERROR
-        // (*end_c).second = 1; // ERROR
-
-        // (*cbegin).first = "test"; // ERROR
-        // (*cbegin).second = 1; // ERROR
-
-        // (*cend).first = "test"; // ERROR
-        // (*cend).second = 1; // ERROR
+        std::pair<const std::string, int> a("1", 1), b("2", 2), c("3", 3), d("4", 4), e("5", 5);
+        hash_map<std::string, int> hm;
+        hm = {a, b, c, d, e};
+        REQUIRE(hm.size() == 5);
     }
 
     SECTION("hash_map", "[std::pair<iterator, bool> emplace(_Args&&... args)]") {
@@ -195,11 +145,21 @@ TEST_CASE("Test") {
     }
 
     SECTION("hash_map", "[void insert(_InputIterator first, _InputIterator last)]") {
-
+        hash_map<std::string, int> from(10);
+        for (int i = 0; i < 5; i++) {
+            from.insert({ std::to_string(i), i });
+        }
+        auto b = from.begin(), e = from.end();
+        hash_map<std::string, int> to;
+        to.insert(b, e);
+        REQUIRE(to.size() == 5);
     }
 
     SECTION("hash_map", "[void insert(std::initializer_list<value_type> l)]") {
-
+        std::pair<const std::string, int> a("1", 1), b("2", 2), c("3", 3), d("4", 4), e("5", 5);
+        hash_map<std::string, int> hm;
+        hm.insert({a, b, c, d, e});
+        REQUIRE(hm.size() == 5);
     }
 
     SECTION("hash_map", "[std::pair<iterator, bool> insert_or_assign(const key_type& k, _Obj&& obj)]") {
@@ -281,7 +241,7 @@ TEST_CASE("Test") {
     SECTION("hash_map", "[size_type bucket(const key_type& _K) const]") {
 
     }
-    */
+
     SECTION("hash_map", "[void max_load_factor(float z)]") {
         hash_map<std::string, int> hm;
         hm.reserve(100);
@@ -293,13 +253,21 @@ TEST_CASE("Test") {
         REQUIRE(hm.load_factor() == 0.1f);
         REQUIRE(hm.size() == 100);
         REQUIRE(hm.max_size() == 1000);
-        hm.max_load_factor(1);
+
         std::ofstream fout("out.txt");
         for (auto it : hm) {
             fout << "\"" << it.first << "\":=" << it.second << "\n";
         }
+
+        hash_map_const_iterator<std::pair<const std::string, int>> b, e;
+        b = hm.cbegin();
+        e = hm.cend();
+        fout << "====================\n";
+        for (; b != e; ++b) {
+            fout << "\"" << (*b).first << "\":=" << (*b).second << "\n";
+        }
     }
-    /*
+
     SECTION("hash_map", "[void rehash(size_type n)]") {
         using _pair = std::pair<hash_map_iterator<std::pair<const std::string, int>>, bool>;
         hash_map<std::string, int> hm;
@@ -324,5 +292,4 @@ TEST_CASE("Test") {
     SECTION("hash_map", "[bool operator==(const hash_map& other) const]") {
 
     }
-    */
 }

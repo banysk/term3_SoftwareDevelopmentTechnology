@@ -36,15 +36,21 @@ public:
     using reference = typename std::add_lvalue_reference<T>::type;
     using const_reference = typename std::add_lvalue_reference<const T>::type;
     using value_type = T;
+
     // методы
     allocator() noexcept = default;
+
     allocator(const allocator&) noexcept = default;
+
     template <class U>
     allocator(const allocator<U>&) noexcept {};
+
     ~allocator() = default;
+
     pointer allocate(size_type n) {
         return static_cast<T*>(::operator new(n * sizeof(T)));
     }
+
     void deallocate(pointer p, size_type) noexcept {
         ::operator delete(p);
     }
@@ -59,17 +65,22 @@ public:
     using difference_type = std::ptrdiff_t;
     using reference = ValueType&;
     using pointer = ValueType*;
+
     // friend
     template<typename>
     friend class hash_map_const_iterator;
+
     // методы
     hash_map_iterator() noexcept = default;
+
     hash_map_iterator(Node<value_type> &n) noexcept {
         node = &n;
     }
+
     hash_map_iterator(const hash_map_iterator& other) noexcept {
         node = other.node;
     }
+
     reference operator*() const {
         if (node == nullptr || node->PtrToValue == nullptr) {
             std::out_of_range("node || node->PtrToValue == nullptr");
@@ -78,9 +89,11 @@ public:
             return *(node->PtrToValue);
         }
     }
+
     pointer operator->() const {
         return node->PtrToValue;
     }
+
     hash_map_iterator& operator++() {
         ++node;
         while (node == nullptr || (node->Status != PLACED && node->Status != END)) {
@@ -88,19 +101,19 @@ public:
         }
         return *this;
     }
+
     hash_map_iterator operator++(int) {
         hash_map_iterator new_this = *this;
         operator++();
         return new_this;
     }
+
     friend bool operator==(const hash_map_iterator<ValueType> &l, const hash_map_iterator<ValueType> &r) {
         return (l.node == r.node);
     }
+
     friend bool operator!=(const hash_map_iterator<ValueType> &l, const hash_map_iterator<ValueType> &r) {
         return !(l == r);
-    }
-    void CastToEnd() {
-        node->Status = END;
     }
 
 private:
@@ -118,17 +131,22 @@ public:
     using difference_type = std::ptrdiff_t;
     using reference = const ValueType&;
     using pointer = const ValueType*;
+
     // методы
     hash_map_const_iterator() noexcept = default;
+
     hash_map_const_iterator(const Node<value_type> &n) noexcept {
         node = &n;
     }
+
     hash_map_const_iterator(const hash_map_const_iterator &other) noexcept {
         node = other.node;
     }
+
     hash_map_const_iterator(const hash_map_iterator<ValueType> &other) noexcept {
         node = other.node;
     }
+
     reference operator*() const {
         if (node == nullptr || node->PtrToValue == nullptr || node->Status != PLACED) {
             std::out_of_range("node || node->PtrToValue == nullptr");
@@ -137,28 +155,29 @@ public:
             return *(node->PtrToValue);
         }
     }
+
     pointer operator->() const {
         return node->PtrToValue;
     }
+
     hash_map_const_iterator& operator++() {
+        ++node;
         while (node == nullptr || (node->Status != PLACED && node->Status != END)) {
             node++;
         }
         return *this;
     }
-    //hash_map_const_iterator operator++(int) {
-    //    if (node == nullptr || node->Status != PLACED) {
-    //        while (node == nullptr || node->Status != PLACED) {
-    //            node++;
-    //        }
-    //    }
-    //    hash_map_const_iterator new_this = *this;
-    //    operator++();
-    //    return new_this;
-    //}
+
+    hash_map_const_iterator operator++(int) {
+        hash_map_iterator new_this = *this;
+        operator++();
+        return new_this;
+    }
+
     friend bool operator==(const hash_map_const_iterator<ValueType> &l, const hash_map_const_iterator<ValueType> &r) {
         return (l.node == r.node);
     }
+
     friend bool operator!=(const hash_map_const_iterator<ValueType> &l, const hash_map_const_iterator<ValueType> &r) {
         return !(l == r);
     }
@@ -187,6 +206,7 @@ public:
     using iterator = hash_map_iterator<value_type>;
     using const_iterator = hash_map_const_iterator<value_type>;
     using size_type = std::size_t;
+
     // методы
     hash_map() noexcept {
         _Deallocated = true;
@@ -195,6 +215,7 @@ public:
         _LoadFactor = 0.5;
         _Data = nullptr;
     } /// TESTED
+
     explicit hash_map(size_type n) {
         _Deallocated = true;
         _Size = 0;
@@ -202,42 +223,57 @@ public:
         _LoadFactor = 0.5;
         _Data = nullptr;
         if (n > 0) {
-            _Deallocated = false;
-            _Data = _Alloc.allocate(n);
-            _Ptr = std::vector<Node<value_type>>(n + 1);
-            for (int i = 0; i < _Capacity; i++) {
-                _Ptr[i].PtrToValue = &_Data[i];
-            }
+            rehash(n);
         }
     } /// TESTED
+
     ~hash_map() {
         clear();
     } /// TESTED
 
-    /**
-     *  @brief  Builds an %hash_map from a range.
-     *  @param  first  An input iterator.
-     *  @param  last  An input iterator.
-     *  @param  n  Minimal initial number of buckets.
-     *
-     *  Create an %hash_map consisting of copies of the elements from
-     *  [first,last).  This is linear in N (where N is
-     *  distance(first,last)).
-     */
     template<typename InputIterator>
-    hash_map(InputIterator first, InputIterator last,
-        size_type n = 0);
+    hash_map(InputIterator first, InputIterator last, size_type n = 0) {
+        _Deallocated = true;
+        _Size = 0;
+        _Capacity = n;
+        _LoadFactor = 0.5;
+        _Data = nullptr;
+        if (n > 0) {
+            rehash(n);
+        }
+        for (; first != last; ++first) {
+            insert(*first);
+        }
+    } /// TESTED
 
-    /// Copy constructor.
-    hash_map(const hash_map&);
+    hash_map(const hash_map &hm) {
+        _Alloc = hm._Alloc;
+        _Deallocated = hm._Deallocated;
+        _Size = hm._Size;
+        _Capacity = hm._Capacity;
+        _LoadFactor = hm._LoadFactor;
+        _Data = _Alloc.allocate(_Capacity);
+        memcpy(_Data, hm._Data, _Capacity * sizeof(value_type));
+        _Ptr = std::vector<Node<value_type>>(_Ptr);
+        _Hash = hm._Hash;
+        _Pred = hm._Pred;
+    } /// TESTED
 
-    /// Move constructor.
-    hash_map(hash_map&&);
+    hash_map(hash_map &&hm) {
+        using std::move;
+        _Alloc = move(hm._Alloc);
+        _Deallocated = move(hm._Deallocated);
+        _Size = move(hm._Size);
+        _Capacity = move(hm._Capacity);
+        _LoadFactor = move(hm._LoadFactor);
+        _Data = move(hm._Data);
+        _Ptr = std::vector<Node<value_type>>(_Ptr);
+        _Hash = move(hm._Hash);
+        _Pred = move(hm._Pred);
+        hm._Deallocated = true;
+        hm.clear();
+    } /// TESTED
 
-    /**
-     *  @brief Creates an %hash_map with no elements.
-     *  @param a An allocator object.
-     */
     explicit hash_map(const allocator_type& a) {
         _Deallocated = true;
         _Size = 0;
@@ -247,32 +283,52 @@ public:
         _Alloc = a;
     } /// TESTED
 
-    /*
-    *  @brief Copy constructor with allocator argument.
-    * @param  uset  Input %hash_map to copy.
-    * @param  a  An allocator object.
-    */
-    hash_map(const hash_map& umap,
-        const allocator_type& a);
+    hash_map(const hash_map& hm, const allocator_type& a) {
+        _Alloc = a;
+        _Deallocated = hm._Deallocated;
+        _Size = hm._Size;
+        _Capacity = hm._Capacity;
+        _LoadFactor = hm._LoadFactor;
+        _Data = _Alloc.allocate(_Capacity);
+        memcpy(_Data, hm._Data, _Capacity * sizeof(value_type));
+        _Ptr = std::vector<Node<value_type>>(_Ptr);
+        _Hash = hm._Hash;
+        _Pred = hm._Pred;
+    } /// TESTED
 
     /*
     *  @brief  Move constructor with allocator argument.
     *  @param  uset Input %hash_map to move.
     *  @param  a    An allocator object.
     */
-    hash_map(hash_map&& umap,
-        const allocator_type& a);
+    hash_map(hash_map &&hm, const allocator_type& a) {
+        using std::move;
+        _Alloc = a;
+        _Deallocated = move(hm._Deallocated);
+        _Size = move(hm._Size);
+        _Capacity = move(hm._Capacity);
+        _LoadFactor = move(hm._LoadFactor);
+        _Data = move(hm._Data);
+        _Ptr = std::vector<Node<value_type>>(_Ptr);
+        _Hash = move(hm._Hash);
+        _Pred = move(hm._Pred);
+        hm._Deallocated = true;
+        hm.clear();
+    } // FIX ME
 
-    /**
-     *  @brief  Builds an %hash_map from an initializer_list.
-     *  @param  l  An initializer_list.
-     *  @param n  Minimal initial number of buckets.
-     *
-     *  Create an %hash_map consisting of copies of the elements in the
-     *  list. This is linear in N (where N is @a l.size()).
-     */
-    hash_map(std::initializer_list<value_type> l,
-        size_type n = 0);
+    hash_map(std::initializer_list<value_type> l, size_type n = 0) {
+        _Deallocated = true;
+        _Size = 0;
+        _Capacity = n;
+        _LoadFactor = 0.5;
+        _Data = nullptr;
+        if (n > 0) {
+            rehash(n);
+        }
+        for (auto el : l) {
+            insert(el);
+        }
+    } /// TESTED
 
     /// Copy assignment operator.
     hash_map& operator=(const hash_map&);
@@ -280,41 +336,29 @@ public:
     /// Move assignment operator.
     hash_map& operator=(hash_map&&);
 
-    /**
-     *  @brief  %hash_map list assignment operator.
-     *  @param  l  An initializer_list.
-     *
-     *  This function fills an %hash_map with copies of the elements in
-     *  the initializer list @a l.
-     *
-     *  Note that the assignment completely changes the %hash_map and
-     *  that the resulting %hash_map's size is the same as the number
-     *  of elements assigned.
-     */
-    hash_map& operator=(std::initializer_list<value_type> l);
+    hash_map& operator=(std::initializer_list<value_type> l) {
+        for (auto el : l) {
+            insert(el);
+        }
+        return *this;
+    } /// TESTED
 
     allocator_type get_allocator() const noexcept {
         return _Alloc;
     } /// TESTED
 
-    // size and capacity:
-
     bool empty() const noexcept {
         return (_Size == 0);
     } /// TESTED
+
     size_type size() const noexcept {
         return _Size;
     } /// TESTED
+
     size_type max_size() const noexcept {
         return _Capacity;
     } /// TESTED
 
-    // iterators.
-
-    /**
-     *  Returns a read/write iterator that points to the first element in the
-     *  %hash_map.
-     */
     iterator begin() noexcept {
         if (_Capacity == 0) {
             std::out_of_range("container_size is 0");
@@ -324,74 +368,44 @@ public:
             while (_Ptr[++i].Status != PLACED);
             return iterator(_Ptr[i]);
         }
-    }
+    } /// TESTED
 
-    //@{
-    /**
-     *  Returns a read-only (constant) iterator that points to the first
-     *  element in the %hash_map.
-     */
-    //const_iterator begin() const noexcept {
-    //    if (_Capacity == 0) {
-    //        std::out_of_range("container_size is 0");
-    //    }
-    //    else {
-    //        int i = -1;
-    //        while (_Ptr[++i].Status != PLACED) {};
-    //        return const_iterator(_Ptr[i]);
-    //    }
-    //}
+    const_iterator begin() const noexcept {
+        if (_Capacity == 0) {
+            std::out_of_range("container_size is 0");
+        }
+        else {
+            int i = -1;
+            while (_Ptr[++i].Status != PLACED);
+            return const_iterator(_Ptr[i]);
+        }
+    } /// TESTED
 
-    //const_iterator cbegin() const noexcept {
-    //    if (_Capacity == 0) {
-    //        std::out_of_range("container_size is 0");
-    //    }
-    //    else {
-    //        return const_iterator(_Ptr[0]);
-    //    }
-    //}
+    const_iterator cbegin() const noexcept {
+        return begin();
+    } /// TESTED
 
-    /**
-     *  Returns a read/write iterator that points one past the last element in
-     *  the %hash_map.
-     */
     iterator end() noexcept {
         if (_Capacity == 0) {
             std::out_of_range("container_size is 0");
         }
         else {
-            auto it = iterator(_Ptr[_Capacity]);
-            it.CastToEnd();
-            return it;
+            return iterator(_Ptr[_Capacity]);
         }
-    }
+    } /// TESTED
 
-    //@{
-    /**
-     *  Returns a read-only (constant) iterator that points one past the last
-     *  element in the %hash_map.
-     */
-    //const_iterator end() const noexcept {
-    //    if (_Capacity == 0) {
-    //        std::out_of_range("container_size is 0");
-    //    }
-    //    else {
-    //        return const_iterator(_Ptr[_Capacity - 1]);
-    //    }
-    //}
+    const_iterator end() const noexcept {
+        if (_Capacity == 0) {
+            std::out_of_range("container_size is 0");
+        }
+        else {
+            return const_iterator(_Ptr[_Capacity]);
+        }
+    } /// TESTED
 
-
-    //const_iterator cend() const noexcept {
-    //    if (_Capacity == 0) {
-    //        std::out_of_range("container_size is 0");
-    //    }
-    //    else {
-    //        return const_iterator(_Ptr[_Capacity - 1]);
-    //    }
-    //}
-    //@}
-
-    // modifiers.
+    const_iterator cend() const noexcept {
+        return end();
+    } /// TESTED
 
     /**
      *  @brief Attempts to build and insert a std::pair into the
@@ -472,6 +486,7 @@ public:
         std::pair<iterator, bool> pair(iterator(_Ptr[hash]), unique);
         return pair;
     } /// TESTED
+
     std::pair<iterator, bool> insert(value_type&& x) {
         if (_Capacity == 0) {
             rehash(ceil(2.0 / _LoadFactor));
@@ -501,28 +516,18 @@ public:
         return pair;
     } /// TESTED
 
-    //@}
-
-    /**
-     *  @brief A template function that attempts to insert a range of
-     *  elements.
-     *  @param  first  Iterator pointing to the start of the range to be
-     *                   inserted.
-     *  @param  last  Iterator pointing to the end of the range.
-     *
-     *  Complexity similar to that of the range constructor.
-     */
     template<typename _InputIterator>
-    void insert(_InputIterator first, _InputIterator last);
+    void insert(_InputIterator first, _InputIterator last) {
+        for (; first != last; ++first) {
+            insert(*first);
+        }
+    } /// TESTED
 
-    /**
-     *  @brief Attempts to insert a list of elements into the %hash_map.
-     *  @param  l  A std::initializer_list<value_type> of elements
-     *               to be inserted.
-     *
-     *  Complexity similar to that of the range constructor.
-     */
-    void insert(std::initializer_list<value_type> l);
+    void insert(std::initializer_list<value_type> l) {
+        for (auto el : l) {
+            insert(el);
+        }
+    } /// TESTED
 
 
     /**
@@ -631,19 +636,13 @@ public:
     template<typename _H2, typename _P2>
     void merge(hash_map<K, T, _H2, _P2, Alloc>&& source);
 
-    // observers.
-
-    ///  Returns the hash functor object with which the %hash_map was
-    ///  constructed.
     Hash hash_function() const {
         return _Hash;
-    }
+    } /// TESTED
 
-    ///  Returns the key comparison object with which the %hash_map was
-    ///  constructed.
     Pred key_eq() const {
         return _Pred;
-    }
+    } /// TESTED
 
     // lookup.
 
@@ -723,9 +722,6 @@ public:
     */
     size_type bucket(const key_type& _K) const;
 
-    // hash policy.
-
-    /// Returns the average number of elements per bucket.
     float load_factor() const noexcept {
         if (_Size == 0) {
             return 0;
@@ -734,14 +730,17 @@ public:
             return (float)_Size / _Capacity;
         }
     } /// TESTED
+
     float max_load_factor() const noexcept {
         return _LoadFactor;
     } /// TESTED
+
     void max_load_factor(float z) {
         float tmp = z / _LoadFactor;
         _LoadFactor = z;
         rehash(ceil(_Capacity / tmp));
     } /// TESTED
+
     void rehash(size_type NewCapacity) {
         if ((float)_Size / NewCapacity <= _LoadFactor) {
             value_type* Data = _Data;
@@ -749,6 +748,7 @@ public:
             _Capacity = NewCapacity;
             _Data = _Alloc.allocate(_Capacity);
             _Ptr = std::vector<Node<value_type>>(_Capacity + 1);
+            _Ptr[_Capacity].Status = END;
             _Size = 0;
             for (int i = 0; i < _Capacity; i++) {
                 _Ptr[i].PtrToValue = &_Data[i];
@@ -763,6 +763,7 @@ public:
             Ptr.clear();
         }
     } /// TESTED
+
     void reserve(size_type n) {
         rehash(ceil(n / _LoadFactor));
     } /// TESTED
