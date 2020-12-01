@@ -289,17 +289,15 @@ TEST_CASE("Test") {
             hm.insert({ std::to_string(i), i });
         }
         hm.max_load_factor(0.1f);
-        //REQUIRE(hm.max_load_factor() == 0.1f);
-        //REQUIRE(hm.load_factor() == 0.1f);
-        //REQUIRE(hm.size() == 100);
-        //REQUIRE(hm.max_size() == 1000);
-        //hm.max_load_factor(1);
+        REQUIRE(hm.max_load_factor() == 0.1f);
+        REQUIRE(hm.load_factor() == 0.1f);
+        REQUIRE(hm.size() == 100);
+        REQUIRE(hm.max_size() == 1000);
+        hm.max_load_factor(1);
         std::ofstream fout("out.txt");
-        for (auto item : hm) {
-            fout << "\"" << item.first << "\":=" << item.second << "\n";
+        for (auto it : hm) {
+            fout << "\"" << it.first << "\":=" << it.second << "\n";
         }
-
-        //REQUIRE(hm.begin() == hm.end());
     }
     /*
     SECTION("hash_map", "[void rehash(size_type n)]") {

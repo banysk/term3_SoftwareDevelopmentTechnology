@@ -11,7 +11,8 @@ namespace fefu
     enum NodeStatus {
         EMPTY,
         PLACED,
-        REMOVED
+        REMOVED,
+        END,
     };
     // Структура, хранит в себе указатель на значение и статус
     template <typename T>
@@ -82,8 +83,8 @@ public:
     }
     hash_map_iterator& operator++() {
         ++node;
-        while (node->PtrToValue == nullptr || node->Status != PLACED) {
-            ++node;
+        while (node == nullptr || (node->Status != PLACED && node->Status != END)) {
+            node++;
         }
         return *this;
     }
@@ -97,6 +98,9 @@ public:
     }
     friend bool operator!=(const hash_map_iterator<ValueType> &l, const hash_map_iterator<ValueType> &r) {
         return !(l == r);
+    }
+    void CastToEnd() {
+        node->Status = END;
     }
 
 private:
@@ -137,7 +141,7 @@ public:
         return node->PtrToValue;
     }
     hash_map_const_iterator& operator++() {
-        while (node == nullptr || node->Status != PLACED) {
+        while (node == nullptr || (node->Status != PLACED && node->Status != END)) {
             node++;
         }
         return *this;
@@ -199,9 +203,9 @@ public:
         _Data = nullptr;
         if (n > 0) {
             _Deallocated = false;
-            _Data = _Alloc.allocate(n + 1);
-            _Ptr.resize(n + 1);
-            for (int i = 0; i < _Capacity + 1; i++) {
+            _Data = _Alloc.allocate(n);
+            _Ptr = std::vector<Node<value_type>>(n + 1);
+            for (int i = 0; i < _Capacity; i++) {
                 _Ptr[i].PtrToValue = &_Data[i];
             }
         }
@@ -356,8 +360,9 @@ public:
             std::out_of_range("container_size is 0");
         }
         else {
-            _Ptr[_Capacity].Status = PLACED;
-            return iterator(_Ptr[_Capacity]);
+            auto it = iterator(_Ptr[_Capacity]);
+            it.CastToEnd();
+            return it;
         }
     }
 
@@ -442,7 +447,10 @@ public:
 
     std::pair<iterator, bool> insert(const value_type& x) {
         if (_Capacity == 0) {
-            rehash(2 * ceil((float)1 / _LoadFactor));
+            rehash(ceil(2.0 / _LoadFactor));
+        } else
+        if ((float)(_Size + 1) / _Capacity > _LoadFactor) {
+            rehash(2 * ceil((float)_Size / _LoadFactor));
         }
         int hashed = _Hash(x.first);
         int hash;
@@ -450,9 +458,6 @@ public:
         for (int i = 0; i < _Capacity; i++) {
             hash = (abs(hashed) + i) % _Capacity;
             if (_Ptr[hash].Status == EMPTY || _Ptr[hash].Status == REMOVED) {
-                if ((float)(_Size + 1) / _Capacity > _LoadFactor) {
-                    rehash(2 * ceil((float)(_Size + 1) / _LoadFactor));
-                }
                 new (&_Data[hash]) value_type(x);
                 _Ptr[hash].Status = PLACED;
                 _Size++;
@@ -469,17 +474,18 @@ public:
     } /// TESTED
     std::pair<iterator, bool> insert(value_type&& x) {
         if (_Capacity == 0) {
-            rehash(2 * ceil((float)1 / _LoadFactor));
+            rehash(ceil(2.0 / _LoadFactor));
         }
+        else
+            if ((float)(_Size + 1) / _Capacity > _LoadFactor) {
+                rehash(2 * ceil((float)_Size / _LoadFactor));
+            }
         int hashed = _Hash(x.first);
         int hash;
         bool unique = true;
         for (int i = 0; i < _Capacity; i++) {
             hash = (abs(hashed) + i) % _Capacity;
             if (_Ptr[hash].Status == EMPTY || _Ptr[hash].Status == REMOVED) {
-                if ((float)(_Size + 1) / _Capacity > _LoadFactor) {
-                    rehash(2 * ceil((float)(_Size + 1) / _LoadFactor));
-                }
                 new (&_Data[hash]) value_type(x);
                 _Ptr[hash].Status = PLACED;
                 _Size++;
@@ -728,7 +734,6 @@ public:
             return (float)_Size / _Capacity;
         }
     } /// TESTED
-
     float max_load_factor() const noexcept {
         return _LoadFactor;
     } /// TESTED
@@ -742,11 +747,10 @@ public:
             value_type* Data = _Data;
             std::vector<Node<value_type>> Ptr(_Ptr);
             _Capacity = NewCapacity;
-            _Data = _Alloc.allocate(_Capacity + 1);
-            _Ptr.clear();
-            _Ptr.resize(_Capacity + 1);
+            _Data = _Alloc.allocate(_Capacity);
+            _Ptr = std::vector<Node<value_type>>(_Capacity + 1);
             _Size = 0;
-            for (int i = 0; i < _Capacity + 1; i++) {
+            for (int i = 0; i < _Capacity; i++) {
                 _Ptr[i].PtrToValue = &_Data[i];
             }
             for (int i = 0; i < Ptr.size(); i++) {
