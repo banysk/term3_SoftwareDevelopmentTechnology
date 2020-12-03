@@ -83,7 +83,7 @@ public:
 
     reference operator*() const {
         if (node == nullptr || node->PtrToValue == nullptr) {
-            std::out_of_range("node || node->PtrToValue == nullptr");
+            throw std::out_of_range("node || node->PtrToValue == nullptr");
         }
         else {
             return *(node->PtrToValue);
@@ -149,7 +149,7 @@ public:
 
     reference operator*() const {
         if (node == nullptr || node->PtrToValue == nullptr || node->Status != PLACED) {
-            std::out_of_range("node || node->PtrToValue == nullptr");
+            throw std::out_of_range("node || node->PtrToValue == nullptr");
         }
         else {
             return *(node->PtrToValue);
@@ -211,6 +211,7 @@ public:
     hash_map() noexcept {
         _Deallocated = true;
         _Size = 0;
+        reserve(1);
         _Capacity = 0;
         _LoadFactor = 0.5;
         _Data = nullptr;
@@ -223,7 +224,7 @@ public:
         _LoadFactor = 0.5;
         _Data = nullptr;
         if (n > 0) {
-            rehash(n);
+            reserve(n);
         }
     } /// TESTED
 
@@ -239,7 +240,7 @@ public:
         _LoadFactor = 0.5;
         _Data = nullptr;
         if (n > 0) {
-            rehash(n);
+            reserve(n);
         }
         for (; first != last; ++first) {
             insert(*first);
@@ -252,7 +253,7 @@ public:
         _Size = hm._Size;
         _Capacity = hm._Capacity;
         _LoadFactor = hm._LoadFactor;
-        _Data = _Alloc.allocate(_Capacity);
+        _Data = _Alloc.allocate(_Capacity + 1);
         memcpy(_Data, hm._Data, _Capacity * sizeof(value_type));
         _Ptr = std::vector<Node<value_type>>(_Ptr);
         _Hash = hm._Hash;
@@ -289,21 +290,58 @@ public:
         _Size = hm._Size;
         _Capacity = hm._Capacity;
         _LoadFactor = hm._LoadFactor;
-        _Data = _Alloc.allocate(_Capacity);
+        _Data = _Alloc.allocate(_Capacity + 1);
         memcpy(_Data, hm._Data, _Capacity * sizeof(value_type));
         _Ptr = std::vector<Node<value_type>>(_Ptr);
         _Hash = hm._Hash;
         _Pred = hm._Pred;
     } /// TESTED
 
-    /*
-    *  @brief  Move constructor with allocator argument.
-    *  @param  uset Input %hash_map to move.
-    *  @param  a    An allocator object.
-    */
     hash_map(hash_map &&hm, const allocator_type& a) {
-        using std::move;
         _Alloc = a;
+        _Deallocated = hm._Deallocated;
+        _Size = hm._Size;
+        _Capacity = hm._Capacity;
+        _LoadFactor = hm._LoadFactor;
+        _Data = hm._Data;
+        _Ptr = std::vector<Node<value_type>>(_Ptr);
+        _Hash = hm._Hash;
+        _Pred = hm._Pred;
+        hm._Deallocated = true;
+        hm.clear();
+    } /// TESTED
+
+    hash_map(std::initializer_list<value_type> l, size_type n = 0) {
+        _Deallocated = true;
+        _Size = 0;
+        _Capacity = n;
+        _LoadFactor = 0.5;
+        _Data = nullptr;
+        if (n > 0) {
+            reserve(n);
+        }
+        for (auto el : l) {
+            insert(el);
+        }
+    } /// TESTED
+
+    hash_map& operator=(const hash_map &hm) {
+        _Alloc = hm._Alloc;
+        _Deallocated = hm._Deallocated;
+        _Size = hm._Size;
+        _Capacity = hm._Capacity;
+        _LoadFactor = hm._LoadFactor;
+        _Data = _Alloc.allocate(_Capacity + 1);
+        memcpy(_Data, hm._Data, _Capacity * sizeof(value_type));
+        _Ptr = std::vector<Node<value_type>>(_Ptr);
+        _Hash = hm._Hash;
+        _Pred = hm._Pred;
+        return *this;
+    } /// TESTED
+
+    hash_map& operator=(hash_map &&hm) {
+        using std::move;
+        _Alloc = move(hm._Alloc);
         _Deallocated = move(hm._Deallocated);
         _Size = move(hm._Size);
         _Capacity = move(hm._Capacity);
@@ -314,27 +352,8 @@ public:
         _Pred = move(hm._Pred);
         hm._Deallocated = true;
         hm.clear();
-    } // FIX ME
-
-    hash_map(std::initializer_list<value_type> l, size_type n = 0) {
-        _Deallocated = true;
-        _Size = 0;
-        _Capacity = n;
-        _LoadFactor = 0.5;
-        _Data = nullptr;
-        if (n > 0) {
-            rehash(n);
-        }
-        for (auto el : l) {
-            insert(el);
-        }
+        return *this;
     } /// TESTED
-
-    /// Copy assignment operator.
-    hash_map& operator=(const hash_map&);
-
-    /// Move assignment operator.
-    hash_map& operator=(hash_map&&);
 
     hash_map& operator=(std::initializer_list<value_type> l) {
         for (auto el : l) {
@@ -361,7 +380,7 @@ public:
 
     iterator begin() noexcept {
         if (_Capacity == 0) {
-            std::out_of_range("container_size is 0");
+            throw std::out_of_range("container_size is 0");
         }
         else {
             int i = -1;
@@ -372,7 +391,7 @@ public:
 
     const_iterator begin() const noexcept {
         if (_Capacity == 0) {
-            std::out_of_range("container_size is 0");
+            throw std::out_of_range("container_size is 0");
         }
         else {
             int i = -1;
@@ -387,7 +406,7 @@ public:
 
     iterator end() noexcept {
         if (_Capacity == 0) {
-            std::out_of_range("container_size is 0");
+            throw std::out_of_range("container_size is 0");
         }
         else {
             return iterator(_Ptr[_Capacity]);
@@ -396,7 +415,7 @@ public:
 
     const_iterator end() const noexcept {
         if (_Capacity == 0) {
-            std::out_of_range("container_size is 0");
+            throw std::out_of_range("container_size is 0");
         }
         else {
             return const_iterator(_Ptr[_Capacity]);
@@ -557,59 +576,51 @@ public:
     template <typename _Obj>
     std::pair<iterator, bool> insert_or_assign(key_type&& k, _Obj&& obj);
 
-    //@{
-    /**
-     *  @brief Erases an element from an %hash_map.
-     *  @param  position  An iterator pointing to the element to be erased.
-     *  @return An iterator pointing to the element immediately following
-     *          @a position prior to the element being erased. If no such
-     *          element exists, end() is returned.
-     *
-     *  This function erases an element, pointed to by the given iterator,
-     *  from an %hash_map.
-     *  Note that this function only erases the element, and that if the
-     *  element is itself a pointer, the pointed-to memory is not touched in
-     *  any way.  Managing the pointer is the user's responsibility.
-     */
-    iterator erase(const_iterator position);
+    iterator erase(const_iterator position) {
+        int place = position.operator->() - _Data;
+        iterator it(_Ptr[place]);
+        ++it;
+        (position.operator->())->~value_type();
+        _Ptr[place].Status = REMOVED;
+        _Size--;
+        return it;
+    } /// TESTED
 
-    // LWG 2059.
-    iterator erase(iterator position);
-    //@}
+    iterator erase(iterator position) {
+        int place = position.operator->() - _Data;
+        iterator it(_Ptr[place]);
+        ++it;
+        (position.operator->())->~value_type();
+        _Ptr[place].Status = REMOVED;
+        _Size--;
+        return it;
+    } /// TESTED
 
-    /**
-     *  @brief Erases elements according to the provided key.
-     *  @param  x  Key of element to be erased.
-     *  @return  The number of elements erased.
-     *
-     *  This function erases all the elements located by the given key from
-     *  an %hash_map. For an %hash_map the result of this function
-     *  can only be 0 (not present) or 1 (present).
-     *  Note that this function only erases the element, and that if the
-     *  element is itself a pointer, the pointed-to memory is not touched in
-     *  any way.  Managing the pointer is the user's responsibility.
-     */
-    size_type erase(const key_type& x);
+    size_type erase(const key_type& x) {
+        auto it = find(x);
+        if (it == end()) {
+            return 0;
+        }
+        else {
+            erase(it);
+            return 1;
+        }
+    } /// TESTED
 
-    /**
-     *  @brief Erases a [first,last) range of elements from an
-     *  %hash_map.
-     *  @param  first  Iterator pointing to the start of the range to be
-     *                  erased.
-     *  @param last  Iterator pointing to the end of the range to
-     *                be erased.
-     *  @return The iterator @a last.
-     *
-     *  This function erases a sequence of elements from an %hash_map.
-     *  Note that this function only erases the elements, and that if
-     *  the element is itself a pointer, the pointed-to memory is not touched
-     *  in any way.  Managing the pointer is the user's responsibility.
-     */
-    iterator erase(const_iterator first, const_iterator last);
+    iterator erase(const_iterator first, const_iterator last) {
+        int b = first.operator->() - _Data;
+        int e = last.operator->() - _Data;
+        for (int i = b; i < e - 1; ++i) {
+            if (_Ptr[i].Status == PLACED) {
+                erase(iterator(_Ptr[i]));
+            }
+        }
+        return iterator(_Ptr[e]);
+    } /// TESTED
 
     void clear() noexcept {
         if (!_Deallocated) {
-            _Alloc.deallocate(_Data, _Capacity + 1);
+            _Alloc.deallocate(_Data, _Capacity);
             _Ptr.clear();
         }
         _Deallocated = true;
@@ -631,10 +642,22 @@ public:
     void swap(hash_map& x);
 
     template<typename _H2, typename _P2>
-    void merge(hash_map<K, T, _H2, _P2, Alloc>& source);
+    void merge(hash_map<K, T, _H2, _P2, Alloc>& source) {
+        if (source.size() > 0) {
+            for (auto pair : source) {
+                insert(pair);
+            }
+        }
+    } /// TESTED
 
     template<typename _H2, typename _P2>
-    void merge(hash_map<K, T, _H2, _P2, Alloc>&& source);
+    void merge(hash_map<K, T, _H2, _P2, Alloc>&& source) {
+        if (source.size() > 0) {
+            for (auto pair : source) {
+                insert(pair);
+            }
+        }
+    } /// TESTED
 
     Hash hash_function() const {
         return _Hash;
@@ -644,83 +667,101 @@ public:
         return _Pred;
     } /// TESTED
 
-    // lookup.
+    iterator find(const key_type& x) {
+        int hashed = _Hash(x);
+        int hash;
+        for (int i = 0; i < _Capacity; i++) {
+            hash = (abs(hashed) + i) % _Capacity;
+            if (_Ptr[hash].Status == EMPTY) {
+                return end();
+            }
+            if (_Ptr[hash].Status == PLACED && _Data[hash].first == x) {
+                return iterator(_Ptr[hash]);
+            }
+        }
+        return end();
+    } /// TESTED
 
-    //@{
-    /**
-     *  @brief Tries to locate an element in an %hash_map.
-     *  @param  x  Key to be located.
-     *  @return  Iterator pointing to sought-after element, or end() if not
-     *           found.
-     *
-     *  This function takes a key and tries to locate the element with which
-     *  the key matches.  If successful the function returns an iterator
-     *  pointing to the sought after element.  If unsuccessful it returns the
-     *  past-the-end ( @c end() ) iterator.
-     */
-    iterator find(const key_type& x);
+    const_iterator find(const key_type& x) const {
+        int hashed = _Hash(x);
+        int hash;
+        for (int i = 0; i < _Capacity; i++) {
+            hash = (abs(hashed) + i) % _Capacity;
+            if (_Ptr[hash].Status == EMPTY) {
+                return end();
+            }
+            if (_Ptr[hash].Status == PLACED && _Data[hash].first == x) {
+                return const_iterator(_Ptr[hash]);
+            }
+        }
+        return end();
+    } /// TESTED
 
-    const_iterator find(const key_type& x) const;
-    //@}
+    size_type count(const key_type& x) const {
+        auto it = find(x);
+        if (it == end()) {
+            return 0;
+        }
+        else {
+            return 1;
+        }
+    } /// TESTED
 
-    /**
-     *  @brief  Finds the number of elements.
-     *  @param  x  Key to count.
-     *  @return  Number of elements with specified key.
-     *
-     *  This function only makes sense for %unordered_multimap; for
-     *  %hash_map the result will either be 0 (not present) or 1
-     *  (present).
-     */
-    size_type count(const key_type& x) const;
+    bool contains(const key_type& x) const {
+        return count(x);
+    } /// TESTED
 
-    /**
-     *  @brief  Finds whether an element with the given key exists.
-     *  @param  x  Key of elements to be located.
-     *  @return  True if there is any element with the specified key.
-     */
-    bool contains(const key_type& x) const;
+    mapped_type& operator[](const key_type& k) {
+        auto it = find(k);
+        if (it == end()) {
+            auto elem = insert({ k, mapped_type() });
+            return (*(elem.first)).second;
+        }
+        else {
+            return (*it).second;
+        }
+    } /// TESTED
 
-    //@{
-    /**
-     *  @brief  Subscript ( @c [] ) access to %hash_map data.
-     *  @param  k  The key for which data should be retrieved.
-     *  @return  A reference to the data of the (key,data) %pair.
-     *
-     *  Allows for easy lookup with the subscript ( @c [] )operator.  Returns
-     *  data associated with the key specified in subscript.  If the key does
-     *  not exist, a pair with that key is created using default values, which
-     *  is then returned.
-     *
-     *  Lookup requires constant time.
-     */
-    mapped_type& operator[](const key_type& k);
+    mapped_type& operator[](key_type&& k) {
+        auto it = find(k);
+        if (it == end()) {
+            auto elem = insert({ k, mapped_type() });
+            return (*(elem.first)).second;
+        }
+        else {
+            return (*it).second;
+        }
+    } /// TESTED
 
-    mapped_type& operator[](key_type&& k);
-    //@}
+    mapped_type& at(const key_type& k) {
+        auto it = find(k);
+        if (it == end()) {
+            throw std::out_of_range("no key");
+        }
+        return (*it).second;
+    } /// TESTED
 
-    //@{
-    /**
-     *  @brief  Access to %hash_map data.
-     *  @param  k  The key for which data should be retrieved.
-     *  @return  A reference to the data whose key is equal to @a k, if
-     *           such a data is present in the %hash_map.
-     *  @throw  std::out_of_range  If no such data is present.
-     */
-    mapped_type& at(const key_type& k);
-
-    const mapped_type& at(const key_type& k) const;
+    const mapped_type& at(const key_type& k) const {
+        auto it = find(k);
+        if (it == end()) {
+            throw std::out_of_range("no key");
+        }
+        return (*it).second;
+    } /// TESTED
 
     size_type bucket_count() const noexcept {
         return _Size;
     } /// TESTED
 
-    /*
-    * @brief  Returns the bucket index of a given element.
-    * @param  _K  A key instance.
-    * @return  The key bucket index.
-    */
-    size_type bucket(const key_type& _K) const;
+    size_type bucket(const key_type& _K) const {
+        auto it = find(_K);
+        if (it == end()) {
+            return -1;
+        }
+        else {
+            return it.operator->() - _Data;
+        }
+    } /// TESTED
 
     float load_factor() const noexcept {
         if (_Size == 0) {
@@ -750,7 +791,7 @@ public:
             _Ptr = std::vector<Node<value_type>>(_Capacity + 1);
             _Ptr[_Capacity].Status = END;
             _Size = 0;
-            for (int i = 0; i < _Capacity; i++) {
+            for (int i = 0; i < _Capacity + 1; i++) {
                 _Ptr[i].PtrToValue = &_Data[i];
             }
             for (int i = 0; i < Ptr.size(); i++) {
@@ -768,7 +809,9 @@ public:
         rehash(ceil(n / _LoadFactor));
     } /// TESTED
 
-    bool operator==(const hash_map& other) const;
+    bool operator==(const hash_map& other) const {
+        return true;
+    } // fix me
 
 private:
     // поля
@@ -776,8 +819,8 @@ private:
     int _Size; // количество элементов
     int _Capacity; // вместительность 
     float _LoadFactor; // коэффициент заполненности
-    value_type *_Data; // указатель на память
     std::vector<Node<value_type>> _Ptr; // информация об элементах _Data
+    value_type *_Data; // указатель на память
     Hash _Hash; // хеш функция
     Pred _Pred; // функция сравнения
     Alloc _Alloc; // аллокатор
