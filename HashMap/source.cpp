@@ -28,6 +28,8 @@ TEST_CASE("hash_map") {
         REQUIRE(hm.size() == 4);
         hm.insert({ "5", 1 });
         REQUIRE(hm.size() == 5);
+        hm.insert({ "5", 0 });
+        REQUIRE(hm.size() == 5);
     }
 
     SECTION("2") {
@@ -184,6 +186,78 @@ TEST_CASE("hash_map") {
         hm["1"];
         hm.erase(key);
         hm[key];
+    }
+
+    SECTION("13") {
+        log_data.push_back("SECTION(\"13\")\n");
+        log_data.push_back("<no data>\n");
+        fefu::hash_map<std::string, int> hm;
+        for (int i = 0; i < 100; i++) {
+            hm.insert({ std::to_string(i), i });
+        }
+        fefu::hash_map<std::string, int> hm1(hm);
+        REQUIRE(hm == hm1);
+
+        std::pair<const std::string, int> a("1", 1), b("2", 2), c("3", 3), d("4", 4), e("5", 5);
+        fefu::hash_map<std::string, int> hm2 = move(fefu::hash_map<std::string, int>({a, b, c, d, e}));
+        REQUIRE(hm2.size() == 5);
+    }
+
+    SECTION("14") {
+        log_data.push_back("<no data>\n");
+        log_data.push_back("SECTION(\"14\")\n");
+        fefu::allocator<std::pair<const std::string, int>> a;
+        fefu::hash_map<std::string, int> hm1(a);
+        for (int i = 0; i < 100; i++) {
+            hm1.insert({ std::to_string(i), i });
+        }
+        fefu::hash_map<std::string, int> hm2;
+        for (int i = 100; i < 200; i++) {
+            hm1.insert({ std::to_string(i), i });
+        }
+        hm1.merge(hm2);
+        REQUIRE(hm1.size() == 200);
+
+        fefu::hash_map<std::string, int> hm3(hm1, a);
+        REQUIRE(hm3.size() == 200);
+
+        fefu::hash_map<std::string, int> hm4(fefu::hash_map<std::string, int>(), a);
+        REQUIRE(hm4.size() == 0);
+    }
+    
+    SECTION("15") {
+        log_data.push_back("SECTION(\"15\")\n");
+        log_data.push_back("<no data>\n");
+        fefu::hash_map<std::string, int> hm1(100);
+        for (int i = 0; i < 100; i++) {
+            hm1.insert({ std::to_string(i), i });
+        }
+        fefu::hash_map<std::string, int> hm2;
+        hm2 = hm1;
+        REQUIRE(hm1 == hm2);
+
+        hm2 = fefu::hash_map<std::string, int>({ {"1", 1}, {"2", 2} });
+        REQUIRE(hm2.size() == 2);
+    }
+
+    SECTION("16") {
+        log_data.push_back("SECTION(\"15\")\n");
+        fefu::hash_map<std::string, int> hm;
+        hm.emplace(std::piecewise_construct,
+            std::forward_as_tuple("test"),
+            std::forward_as_tuple(777));
+        log_data.push_back(std::to_string(hm["test"]) + "\n");
+        hm.try_emplace("test", 666);
+        log_data.push_back(std::to_string(hm["test"]) + "\n");
+        std::string key = "test1";
+        hm.emplace(key, 1);
+        log_data.push_back(std::to_string(hm[key]) + "\n");
+        hm.try_emplace(key, 2);
+        log_data.push_back(std::to_string(hm[key]) + "\n");
+        hm.insert_or_assign("testTTT", 10101010);
+        log_data.push_back(std::to_string(hm["testTTT"]) + "\n");
+        hm.insert_or_assign(key, -2);
+        log_data.push_back(std::to_string(hm[key]) + "\n");
     }
 
     SECTION("LOG") {

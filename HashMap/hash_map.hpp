@@ -247,31 +247,80 @@ public:
         }
     } /// OK
 
-    /// Copy constructor.
-    hash_map(const hash_map&);
+    hash_map(const hash_map &hm) {
+        LoadFactor = hm.LoadFactor;
+        Capacity = hm.Capacity;
+        Size = hm.Size;
+        // =====
+        Hash_ = hm.Hash_;
+        Pred_ = hm.Pred_;
+        Allocator = hm.Allocator;
+        Deallocated = hm.Deallocated;
+        // =====
+        Info.resize(Capacity + 1);
+        Data = Allocator.allocate(Capacity + 1);
+        for (int i = 0; i < Capacity + 1; i++) {
+            Node<value_type> node(&Data[i], hm.Info[i].status);
+            new (&Data[i]) value_type(hm.Data[i]);
+            Info[i] = node;
+        }
+    } /// OK
 
-    /// Move constructor.
-    hash_map(hash_map&&);
+    hash_map(hash_map &&hm) {
+        LoadFactor = hm.LoadFactor;
+        Capacity = hm.Capacity;
+        Size = hm.Size;
+        // =====
+        Hash_ = hm.Hash_;
+        Pred_ = hm.Pred_;
+        Allocator = hm.Allocator;
+        Deallocated = hm.Deallocated;
+        // =====
+        Info = hm.Info;
+        Data = hm.Data;
+    } /// OK
 
-    /**
-     *  @brief Creates an %hash_map with no elements.
-     *  @param a An allocator object.
-     */
-    explicit hash_map(const allocator_type& a);
+    explicit hash_map(const allocator_type& a) {
+        LoadFactor = 0.5f;
+        Size = 0;
+        Data = nullptr;
+        Deallocated = true;
+        Allocator = a;
+        reserve(1);
+    } /// OK
 
-    /*
-    *  @brief Copy constructor with allocator argument.
-    * @param  uset  Input %hash_map to copy.
-    * @param  a  An allocator object.
-    */
-    hash_map(const hash_map& umap, const allocator_type& a);
+    hash_map(const hash_map& hm, const allocator_type& a) {
+        LoadFactor = hm.LoadFactor;
+        Capacity = hm.Capacity;
+        Size = hm.Size;
+        // =====
+        Hash_ = hm.Hash_;
+        Pred_ = hm.Pred_;
+        Allocator = a;
+        Deallocated = hm.Deallocated;
+        // =====
+        Info.resize(Capacity + 1);
+        Data = Allocator.allocate(Capacity + 1);
+        for (int i = 0; i < Capacity + 1; i++) {
+            Node<value_type> node(&Data[i], hm.Info[i].status);
+            new (&Data[i]) value_type(hm.Data[i]);
+            Info[i] = node;
+        }
+    } /// OK
 
-    /*
-    *  @brief  Move constructor with allocator argument.
-    *  @param  uset Input %hash_map to move.
-    *  @param  a    An allocator object.
-    */
-    hash_map(hash_map&& umap, const allocator_type& a);
+    hash_map(hash_map&& hm, const allocator_type& a) {
+        LoadFactor = hm.LoadFactor;
+        Capacity = hm.Capacity;
+        Size = hm.Size;
+        // =====
+        Hash_ = hm.Hash_;
+        Pred_ = hm.Pred_;
+        Allocator = a;
+        Deallocated = hm.Deallocated;
+        // =====
+        Info = hm.Info;
+        Data = hm.Data;
+    } /// OK
 
 
     hash_map(std::initializer_list<value_type> l, size_type n = 0) {
@@ -290,11 +339,43 @@ public:
         }
     } /// OK
 
-    /// Copy assignment operator.
-    hash_map& operator=(const hash_map&);
+    hash_map& operator=(const hash_map &hm) {
+        clear();
+        Allocator.deallocate(Data, Capacity + 1);
+        LoadFactor = hm.LoadFactor;
+        Capacity = hm.Capacity;
+        Size = hm.Size;
+        // =====
+        Hash_ = hm.Hash_;
+        Pred_ = hm.Pred_;
+        Allocator = hm.Allocator;
+        Deallocated = hm.Deallocated;
+        // =====
+        Info.resize(Capacity + 1);
+        Data = Allocator.allocate(Capacity + 1);
+        for (int i = 0; i < Capacity + 1; i++) {
+            Node<value_type> node(&Data[i], hm.Info[i].status);
+            new (&Data[i]) value_type(hm.Data[i]);
+            Info[i] = node;
+        }
+        return *this;
+    } /// OK
 
-    /// Move assignment operator.
-    hash_map& operator=(hash_map&&);
+    hash_map& operator=(hash_map &&hm) {
+        clear();
+        LoadFactor = hm.LoadFactor;
+        Capacity = hm.Capacity;
+        Size = hm.Size;
+        // =====
+        Hash_ = hm.Hash_;
+        Pred_ = hm.Pred_;
+        Allocator = hm.Allocator;
+        Deallocated = hm.Deallocated;
+        // =====
+        Info = hm.Info;
+        Data = hm.Data;
+        return *this;
+    } /// OK
 
     hash_map& operator=(std::initializer_list<value_type> l) {
         clear();
@@ -348,78 +429,33 @@ public:
         return end();
     } /// OK
 
-
-    // modifiers.
-
-    /**
-     *  @brief Attempts to build and insert a std::pair into the
-     *  %hash_map.
-     *
-     *  @param args  Arguments used to generate a new pair instance (see
-     *	        std::piecewise_contruct for passing arguments to each
-    *	        part of the pair constructor).
-    *
-    *  @return  A pair, of which the first element is an iterator that points
-    *           to the possibly inserted pair, and the second is a bool that
-    *           is true if the pair was actually inserted.
-    *
-    *  This function attempts to build and insert a (key, value) %pair into
-    *  the %hash_map.
-    *  An %hash_map relies on unique keys and thus a %pair is only
-    *  inserted if its first element (the key) is not already present in the
-    *  %hash_map.
-    *
-    *  Insertion requires amortized constant time.
-    */
     template<typename... _Args>
-    std::pair<iterator, bool> emplace(_Args&&... args);
+    std::pair<iterator, bool> emplace(_Args&&... args) {
+        return insert(value_type(std::forward<_Args&&>(args)...));
+    } /// OK
 
-    /**
-     *  @brief Attempts to build and insert a std::pair into the
-     *  %hash_map.
-     *
-     *  @param k    Key to use for finding a possibly existing pair in
-     *                the hash_map.
-     *  @param args  Arguments used to generate the .second for a
-     *                new pair instance.
-     *
-     *  @return  A pair, of which the first element is an iterator that points
-     *           to the possibly inserted pair, and the second is a bool that
-     *           is true if the pair was actually inserted.
-     *
-     *  This function attempts to build and insert a (key, value) %pair into
-     *  the %hash_map.
-     *  An %hash_map relies on unique keys and thus a %pair is only
-     *  inserted if its first element (the key) is not already present in the
-     *  %hash_map.
-     *  If a %pair is not inserted, this function has no effect.
-     *
-     *  Insertion requires amortized constant time.
-     */
     template <typename... _Args>
-    std::pair<iterator, bool> try_emplace(const key_type& k, _Args&&... args);
+    std::pair<iterator, bool> try_emplace(const key_type& k, _Args&&... args) {
+        auto it = find(k);
+        if (it == end()) {
+            return std::pair<iterator, bool>(it, 0);
+        }
+        else {
+            return insert({ k, std::forward<_Args&&>(args)... });
+        }
+    } /// OK
 
-    // move-capable overload
     template <typename... _Args>
-    std::pair<iterator, bool> try_emplace(key_type&& k, _Args&&... args);
+    std::pair<iterator, bool> try_emplace(key_type&& k, _Args&&... args) {
+        auto it = find(k);
+        if (it == end()) {
+            return std::pair<iterator, bool>(it, 0);
+        }
+        else {
+            return insert({ k, std::forward<_Args&&>(args)... });
+        }
+    } /// OK
 
-    //@{
-    /**
-     *  @brief Attempts to insert a std::pair into the %hash_map.
-     *  @param x Pair to be inserted (see std::make_pair for easy
-     *	     creation of pairs).
-    *
-    *  @return  A pair, of which the first element is an iterator that
-    *           points to the possibly inserted pair, and the second is
-    *           a bool that is true if the pair was actually inserted.
-    *
-    *  This function attempts to insert a (key, value) %pair into the
-    *  %hash_map. An %hash_map relies on unique keys and thus a
-    *  %pair is only inserted if its first element (the key) is not already
-    *  present in the %hash_map.
-    *
-    *  Insertion requires amortized constant time.
-    */
     std::pair<iterator, bool> insert(const value_type& x) {
         if ((double)(Size + 1) / Capacity >= LoadFactor) {
             reserve(2 * (Size + 1));
@@ -481,33 +517,15 @@ public:
         }
     } /// OK
 
-
-    /**
-     *  @brief Attempts to insert a std::pair into the %hash_map.
-     *  @param k    Key to use for finding a possibly existing pair in
-     *                the map.
-     *  @param obj  Argument used to generate the .second for a pair
-     *                instance.
-     *
-     *  @return  A pair, of which the first element is an iterator that
-     *           points to the possibly inserted pair, and the second is
-     *           a bool that is true if the pair was actually inserted.
-     *
-     *  This function attempts to insert a (key, value) %pair into the
-     *  %hash_map. An %hash_map relies on unique keys and thus a
-     *  %pair is only inserted if its first element (the key) is not already
-     *  present in the %hash_map.
-     *  If the %pair was already in the %hash_map, the .second of
-     *  the %pair is assigned from obj.
-     *
-     *  Insertion requires amortized constant time.
-     */
     template <typename _Obj>
-    std::pair<iterator, bool> insert_or_assign(const key_type& k, _Obj&& obj);
+    std::pair<iterator, bool> insert_or_assign(const key_type& k, _Obj&& obj) {
+        return insert(value_type(k, std::forward<mapped_type>(obj)));
+    } /// OK
 
-    // move-capable overload
     template <typename _Obj>
-    std::pair<iterator, bool> insert_or_assign(key_type&& k, _Obj&& obj);
+    std::pair<iterator, bool> insert_or_assign(key_type&& k, _Obj&& obj) {
+        return insert(value_type(k, std::forward<mapped_type>(obj)));
+    } /// OK
 
     iterator erase(const_iterator position) {
         int index = position.operator->() - Data;
@@ -545,7 +563,9 @@ public:
     } /// OK
 
     void clear() noexcept {
-        erase(begin(), end());
+        if (Size > 0) {
+            erase(cbegin(), cend());
+        }
     } /// OK
 
     void swap(hash_map& x) noexcept {
@@ -562,10 +582,20 @@ public:
     } /// OK
 
     template<typename _H2, typename _P2>
-    void merge(hash_map<K, T, _H2, _P2, Alloc>& source);
+    void merge(hash_map<K, T, _H2, _P2, Alloc>& source) {
+        reserve(Size + source.Size);
+        for (auto el : source) {
+            insert(el);
+        }
+    } /// OK
 
     template<typename _H2, typename _P2>
-    void merge(hash_map<K, T, _H2, _P2, Alloc>&& source);
+    void merge(hash_map<K, T, _H2, _P2, Alloc>&& source) {
+        reserve(Size + source.Size);
+        for (auto el : source) {
+            insert(el);
+        }
+    } /// OK
 
     Hash hash_function() const {
         return Hash_;
