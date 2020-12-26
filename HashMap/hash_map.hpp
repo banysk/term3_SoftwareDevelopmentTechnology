@@ -90,15 +90,15 @@ public:
         info = other.info;
     }
 
-    reference operator*() const { // ýòî ìîæåò âûçûâàòü îøèáêó
+    reference operator*() const { // ÑÑ‚Ð¾ Ð¼Ð¾Ð¶ÐµÑ‚ Ð²Ñ‹Ð·Ñ‹Ð²Ð°Ñ‚ÑŒ Ð¾ÑˆÐ¸Ð±ÐºÑƒ
         return *(info->ceil);
     }
 
-    pointer operator->() const { // ýòî ìîæåò âûçâàòü îøèáêó
+    pointer operator->() const { // ÑÑ‚Ð¾ Ð¼Ð¾Ð¶ÐµÑ‚ Ð²Ñ‹Ð·Ð²Ð°Ñ‚ÑŒ Ð¾ÑˆÐ¸Ð±ÐºÑƒ
         return info->ceil;
     }
 
-    hash_map_iterator& operator++() { // ýòî ìîæåò âûçâàòü îøèáêó
+    hash_map_iterator& operator++() { // ÑÑ‚Ð¾ Ð¼Ð¾Ð¶ÐµÑ‚ Ð²Ñ‹Ð·Ð²Ð°Ñ‚ÑŒ Ð¾ÑˆÐ¸Ð±ÐºÑƒ
         if (info->status == END)
             return *this;
         ++info;
@@ -108,7 +108,7 @@ public:
         return *this;
     }
 
-    hash_map_iterator operator++(int) { // ýòî ìîæåò âûçâàòü îøèáêó
+    hash_map_iterator operator++(int) { // ÑÑ‚Ð¾ Ð¼Ð¾Ð¶ÐµÑ‚ Ð²Ñ‹Ð·Ð²Ð°Ñ‚ÑŒ Ð¾ÑˆÐ¸Ð±ÐºÑƒ
         hash_map_iterator it = *this;
         operator++();
         return it;
@@ -154,11 +154,11 @@ public:
         info = other.info;
     }
 
-    reference operator*() const { // ýòî ìîæåò âûçâàòü îøèáêó
+    reference operator*() const { // ÑÑ‚Ð¾ Ð¼Ð¾Ð¶ÐµÑ‚ Ð²Ñ‹Ð·Ð²Ð°Ñ‚ÑŒ Ð¾ÑˆÐ¸Ð±ÐºÑƒ
         return *(info->ceil);
     }
 
-    pointer operator->() const { // ýòî ìîæåò âûçâàòü îøèáêó
+    pointer operator->() const { // ÑÑ‚Ð¾ Ð¼Ð¾Ð¶ÐµÑ‚ Ð²Ñ‹Ð·Ð²Ð°Ñ‚ÑŒ Ð¾ÑˆÐ¸Ð±ÐºÑƒ
         return info->ceil;
     }
 
@@ -213,7 +213,6 @@ public:
         LoadFactor = 0.5f;
         Size = 0;
         Data = nullptr;
-        Deallocated = true;
         reserve(1);
     } /// OK
 
@@ -221,7 +220,6 @@ public:
         LoadFactor = 0.5f;
         Size = 0;
         Data = nullptr;
-        Deallocated = true;
         if (n > 1) {
             reserve(n);
         }
@@ -235,7 +233,6 @@ public:
         LoadFactor = 0.5f;
         Size = 0;
         Data = nullptr;
-        Deallocated = true;
         if (n > 1) {
             reserve(n);
         }
@@ -255,7 +252,6 @@ public:
         Hash_ = hm.Hash_;
         Pred_ = hm.Pred_;
         Allocator = hm.Allocator;
-        Deallocated = hm.Deallocated;
         // =====
         Info.resize(Capacity + 1);
         Data = Allocator.allocate(Capacity + 1);
@@ -267,24 +263,14 @@ public:
     } /// OK
 
     hash_map(hash_map &&hm) {
-        LoadFactor = hm.LoadFactor;
-        Capacity = hm.Capacity;
-        Size = hm.Size;
-        // =====
-        Hash_ = hm.Hash_;
-        Pred_ = hm.Pred_;
-        Allocator = hm.Allocator;
-        Deallocated = hm.Deallocated;
-        // =====
-        Info = hm.Info;
-        Data = hm.Data;
+        swap(hm);
+        hm.clear();
     } /// OK
 
     explicit hash_map(const allocator_type& a) {
         LoadFactor = 0.5f;
         Size = 0;
         Data = nullptr;
-        Deallocated = true;
         Allocator = a;
         reserve(1);
     } /// OK
@@ -297,7 +283,6 @@ public:
         Hash_ = hm.Hash_;
         Pred_ = hm.Pred_;
         Allocator = a;
-        Deallocated = hm.Deallocated;
         // =====
         Info.resize(Capacity + 1);
         Data = Allocator.allocate(Capacity + 1);
@@ -309,17 +294,9 @@ public:
     } /// OK
 
     hash_map(hash_map&& hm, const allocator_type& a) {
-        LoadFactor = hm.LoadFactor;
-        Capacity = hm.Capacity;
-        Size = hm.Size;
-        // =====
-        Hash_ = hm.Hash_;
-        Pred_ = hm.Pred_;
+        swap(hm);
+        hm.clear();
         Allocator = a;
-        Deallocated = hm.Deallocated;
-        // =====
-        Info = hm.Info;
-        Data = hm.Data;
     } /// OK
 
 
@@ -327,7 +304,6 @@ public:
         LoadFactor = 0.5f;
         Size = 0;
         Data = nullptr;
-        Deallocated = true;
         if (n > 1) {
             reserve(n);
         }
@@ -349,7 +325,6 @@ public:
         Hash_ = hm.Hash_;
         Pred_ = hm.Pred_;
         Allocator = hm.Allocator;
-        Deallocated = hm.Deallocated;
         // =====
         Info.resize(Capacity + 1);
         Data = Allocator.allocate(Capacity + 1);
@@ -362,18 +337,8 @@ public:
     } /// OK
 
     hash_map& operator=(hash_map &&hm) {
-        clear();
-        LoadFactor = hm.LoadFactor;
-        Capacity = hm.Capacity;
-        Size = hm.Size;
-        // =====
-        Hash_ = hm.Hash_;
-        Pred_ = hm.Pred_;
-        Allocator = hm.Allocator;
-        Deallocated = hm.Deallocated;
-        // =====
-        Info = hm.Info;
-        Data = hm.Data;
+        swap(hm);
+        hm.clear();
         return *this;
     } /// OK
 
@@ -481,27 +446,7 @@ public:
     } /// OK
 
     std::pair<iterator, bool> insert(value_type&& x) {
-        if ((double)(Size + 1) / Capacity >= LoadFactor) {
-            reserve(2 * (Size + 1));
-        }
-        int def_hash = hash_function()(x.first);
-        int hash = def_hash = abs(def_hash);
-        bool unique = true;
-        for (int i = 0; i < Capacity; i++) {
-            hash = (def_hash + i) % Capacity;
-            if (Info[hash].status == EMPTY || Info[hash].status == REMOVED) {
-                new (&Data[hash]) value_type(x);
-                Info[hash].status = PLACED;
-                Size++;
-                break;
-            }
-            else if (Info[hash].status == PLACED && Data[hash].first == x.first) {
-                Data[hash].second = x.second;
-                unique = false;
-                break;
-            }
-        }
-        return std::pair<iterator, bool>(iterator(Info[hash]), unique);
+        return insert(x);
     } /// OK
 
     template<typename _InputIterator>
@@ -576,7 +521,6 @@ public:
         swap(this->Info, x.Info);
         swap(this->Data, x.Data);
         swap(this->Allocator, x.Allocator);
-        swap(this->Deallocated, x.Deallocated);
         swap(this->Hash_, x.Hash_);
         swap(this->Pred_, x.Pred_);
     } /// OK
@@ -591,10 +535,7 @@ public:
 
     template<typename _H2, typename _P2>
     void merge(hash_map<K, T, _H2, _P2, Alloc>&& source) {
-        reserve(Size + source.Size);
-        for (auto el : source) {
-            insert(el);
-        }
+        merge(source);
     } /// OK
 
     Hash hash_function() const {
@@ -655,14 +596,7 @@ public:
     } /// OK
 
     mapped_type& operator[](key_type&& k) {
-        auto it = find(k);
-        if (it == end()) {
-            auto elem = insert({ k, mapped_type() });
-            return (*(elem.first)).second;
-        }
-        else {
-            return (*it).second;
-        }
+        return operator[](k);
     } /// OK
 
     mapped_type& at(const key_type& k) {
@@ -725,7 +659,6 @@ public:
             // ===== update
             Capacity = Capacity_;
             Data = Allocator.allocate(Capacity + 1);
-            Deallocated = false;
             // ===== link 
             for (i = 0; i < Capacity; i++) {
                 Node<value_type> node(&Data[i], EMPTY);
@@ -781,7 +714,6 @@ private:
     std::vector<Node<value_type>> Info;
     value_type *Data;
     Alloc Allocator;
-    bool Deallocated;
     // =====
     Hash Hash_;
     Pred Pred_;
