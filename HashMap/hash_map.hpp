@@ -20,16 +20,10 @@ template<typename T>
 struct Node {
     T* ceil;
     Status status;
-    Node() {
-        ceil = nullptr;
-        status = EMPTY;
-    }
-    Node(T* ceil_, Status status_) {
-        ceil = ceil_;
-        status = status_;
-    }
-    T operator*() {
-        return *ceil;
+    Node() : ceil(nullptr), status(EMPTY) {}
+    Node(T* ceil_, Status status_) : ceil(ceil_), status(status_) {}
+    T* operator*() { // T*
+        return ceil;
     }
 };
 
@@ -74,17 +68,11 @@ public:
 
     template<typename>
     friend class hash_map_const_iterator;
+    template<typename, typename, typename, typename, typename>
+    friend class hash_map;
 
     // METHODS
     hash_map_iterator() noexcept = default;
-
-    hash_map_iterator(Node<ValueType> &info_) noexcept {
-        info = &info_;
-    }
-
-    hash_map_iterator(Node<ValueType> *info_) noexcept {
-        info = info_;
-    }
 
     hash_map_iterator(const hash_map_iterator& other) noexcept {
         info = other.info;
@@ -124,6 +112,14 @@ public:
 
 private:
     Node<ValueType> *info;
+
+    hash_map_iterator(Node<ValueType> &info_) noexcept { // to private
+        info = &info_;
+    }
+
+    hash_map_iterator(Node<ValueType> *info_) noexcept { // to private
+        info = info_;
+    }
 };
 
 template<typename ValueType>
@@ -135,16 +131,11 @@ public:
     using reference = const ValueType&;
     using pointer = const ValueType*;
 
+    template<typename, typename, typename, typename, typename>
+    friend class hash_map;
+
     // METHODS
     hash_map_const_iterator() noexcept = default;
-
-    hash_map_const_iterator(const Node<ValueType> &info_) noexcept {
-        info = &info_;
-    }
-
-    hash_map_const_iterator(const Node<ValueType> *info_) noexcept {
-        info = info_;
-    }
 
     hash_map_const_iterator(const hash_map_const_iterator& other) noexcept {
         info = other.info;
@@ -188,6 +179,14 @@ public:
 
 private:
     const Node<ValueType> *info;
+
+    hash_map_const_iterator(const Node<ValueType> &info_) noexcept { // to private
+        info = &info_;
+    }
+
+    hash_map_const_iterator(const Node<ValueType> *info_) noexcept { // to private
+        info = info_;
+    }
 };
 template<typename K, typename T,
 	   typename Hash = std::hash<K>,
@@ -209,17 +208,11 @@ public:
     using size_type = std::size_t;
 
     // METHODS
-    hash_map() {
-        LoadFactor = 0.5f;
-        Size = 0;
-        Data = nullptr;
+    hash_map() : LoadFactor(0.5f), Size(0), Data(nullptr) {
         reserve(1);
     } /// OK
 
-    explicit hash_map(size_type n) {
-        LoadFactor = 0.5f;
-        Size = 0;
-        Data = nullptr;
+    explicit hash_map(size_type n) : LoadFactor(0.5f), Size(0), Data(nullptr) {
         if (n > 1) {
             reserve(n);
         }
@@ -229,19 +222,14 @@ public:
     } /// OK
 
     template<typename InputIterator>
-    hash_map(InputIterator first, InputIterator last, size_type n = 0) {
-        LoadFactor = 0.5f;
-        Size = 0;
-        Data = nullptr;
+    hash_map(InputIterator first, InputIterator last, size_type n = 0) : LoadFactor(0.5f), Size(0), Data(nullptr) {
         if (n > 1) {
             reserve(n);
         }
         else {
             reserve(1);
         }
-        for (; first != last; ++first) {
-            insert(*first);
-        }
+        insert(first, last);
     } /// OK
 
     void copy_constructor_wrapper(const hash_map &hm) {
@@ -256,9 +244,10 @@ public:
         Info.resize(Capacity + 1);
         Data = Allocator.allocate(Capacity + 1);
         for (int i = 0; i < Capacity + 1; i++) {
-            Node<value_type> node(&Data[i], hm.Info[i].status);
-            new (&Data[i]) value_type(hm.Data[i]);
-            Info[i] = node;
+            Info[i] = Node<value_type>(&Data[i], hm.Info[i].status);
+            if (hm.Info[i].status == PLACED) {
+                new (&Data[i]) value_type(hm.Data[i]);
+            }
         }
     } /// OK
 
@@ -290,10 +279,7 @@ public:
     } /// OK
 
 
-    hash_map(std::initializer_list<value_type> l, size_type n = 0) {
-        LoadFactor = 0.5f;
-        Size = 0;
-        Data = nullptr;
+    hash_map(std::initializer_list<value_type> l, size_type n = 0) : LoadFactor(0.5f), Size(0), Data(nullptr) {
         if (n > 1) {
             reserve(n);
         }
@@ -396,24 +382,39 @@ public:
         }
     } /// OK
 
+    int calculate_hash(const key_type &key, const int &i) const {
+        int hash = hash_function()(key);
+        return (abs(hash) + (i * i)) % Capacity;
+    } /// OK 1
+
+    bool can_insert(const value_type& pair, const int &hash) {
+        return (Info[hash].status == EMPTY || Info[hash].status == REMOVED) ||
+            (Info[hash].status == PLACED && Data[hash].first == pair.first);
+    } /// OK 1
+
+    bool easy_insert(const value_type& pair, const int &hash) {
+        if (Info[hash].status == PLACED) {
+            Data[hash].second = pair.second;
+            return false;
+        }
+        else {
+            new (&Data[hash]) value_type(pair);
+            Info[hash].status = PLACED;
+            Size++;
+            return true;
+        }
+    } /// OK 1
+
     std::pair<iterator, bool> insert(const value_type& x) {
         if ((double)(Size + 1) / Capacity >= max_load_factor()) {
             reserve(2 * (Size + 1));
         }
-        int def_hash = hash_function()(x.first);
-        int hash = def_hash = abs(def_hash);
+        int hash;
         bool unique = true;
         for (int i = 0; i < Capacity; i++) {
-            hash = (def_hash + (i * i)) % Capacity;
-            if (Info[hash].status == EMPTY || Info[hash].status == REMOVED) {
-                new (&Data[hash]) value_type(x);
-                Info[hash].status = PLACED;
-                Size++;
-                break;
-            }
-            else if (Info[hash].status == PLACED && Data[hash].first == x.first) {
-                Data[hash].second = x.second;
-                unique = false;
+            hash = calculate_hash(x.first, i);
+            if (can_insert(x, hash)) {
+                unique = easy_insert(x, hash);
                 break;
             }
         }
@@ -531,10 +532,9 @@ public:
     } /// OK
 
     iterator find(const key_type& x) {
-        int def_hash = hash_function()(x);
-        int hash = def_hash = abs(def_hash);
+        int hash;
         for (int i = 0; i < Capacity; i++) {
-            hash = (def_hash + (i * i)) % Capacity;
+            hash = calculate_hash(x, i);
             if (Info[hash].status == EMPTY) {
                 return end();
             }
@@ -546,10 +546,9 @@ public:
     } /// OK
 
     const_iterator find(const key_type& x) const {
-        int def_hash = hash_function()(x);
-        int hash = def_hash = abs(def_hash);
+        int hash;
         for (int i = 0; i < Capacity; i++) {
-            hash = (def_hash + (i * i)) % Capacity;
+            hash = calculate_hash(x, i);
             if (Info[hash].status == EMPTY) {
                 return end();
             }
@@ -628,34 +627,40 @@ public:
 
     void rehash(size_type Capacity_) {
         if ((double)(Size / Capacity_) <= max_load_factor()) {
-            // ===== save pairs
-            int i = 0;
-            Info.erase(std::remove_if(Info.begin(), Info.end(), 
-                [this, &i](Node<value_type> node) { return Info[i++].status != PLACED; }), Info.end());
-            std::vector<value_type> pairs;
-            for (Node<value_type> node : Info) {
-                pairs.push_back(*node);
-            }
-            // ===== clear data & resize
-            Info.resize(Capacity_ + 1);
-            Allocator.deallocate(Data, Capacity + 1);
-            Size = 0;
-            // ===== update
+            // ===== temporary objects
+            int tmp_Capacity = Capacity;
+            value_type *tmp_Data = std::move(Data);
+            std::vector<Node<value_type>> tmp_Info = std::move(Info);
+            // ===== allocating memory
+            Info = std::vector<Node<value_type>>(Capacity_ + 1);
+            Data = Allocator.allocate(Capacity_ + 1);
             Capacity = Capacity_;
-            Data = Allocator.allocate(Capacity + 1);
+            Size = 0; // don't touch this !!!
             // ===== link 
-            for (i = 0; i < Capacity; i++) {
-                Node<value_type> node(&Data[i], EMPTY);
-                new (&Data[i]) value_type;
-                Info[i] = node;
+            for (int i = 0; i < Capacity_; i++) {
+                Info[i] = Node<value_type>(&Data[i], EMPTY);
             }
-            Node<value_type> node(&Data[i], END);
-            new (&Data[Capacity]) value_type;
-            Info[Capacity] = node;
+            Info[Capacity_] = Node<value_type>(&Data[Capacity_], END);
             // ===== push data
-            for (value_type pair : pairs) {
-                insert(pair);
+            int i, hash;
+            for (Node<value_type> node : tmp_Info) {
+                if (node.status == PLACED) {
+                    for (i = 0; i < Capacity_; i++) {
+                        hash = calculate_hash((*node)->first, i);
+                        if (can_insert(**node, hash)) {
+                            new (&Data[hash]) value_type(**node);
+                            if (Info[hash].status != PLACED) {
+                                Info[hash].status = PLACED;
+                                Size++;
+                            }
+                            break;
+                        }
+                    }
+                }
             }
+            // ===== deallocating memory
+            Allocator.deallocate(tmp_Data, tmp_Capacity + 1);
+            tmp_Info.clear();
         }
     } /// OK
 
