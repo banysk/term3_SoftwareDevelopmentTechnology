@@ -244,7 +244,7 @@ public:
         }
     } /// OK
 
-    hash_map(const hash_map &hm) {
+    void copy_constructor_wrapper(const hash_map &hm) {
         LoadFactor = hm.LoadFactor;
         Capacity = hm.Capacity;
         Size = hm.Size;
@@ -262,9 +262,12 @@ public:
         }
     } /// OK
 
+    hash_map(const hash_map &hm) {
+        copy_constructor_wrapper(hm);
+    } /// OK
+
     hash_map(hash_map &&hm) {
-        swap(hm);
-        hm.clear();
+        move(hm);
     } /// OK
 
     explicit hash_map(const allocator_type& a) {
@@ -276,21 +279,8 @@ public:
     } /// OK
 
     hash_map(const hash_map& hm, const allocator_type& a) {
-        LoadFactor = hm.LoadFactor;
-        Capacity = hm.Capacity;
-        Size = hm.Size;
-        // =====
-        Hash_ = hm.Hash_;
-        Pred_ = hm.Pred_;
+        copy_constructor_wrapper(hm);
         Allocator = a;
-        // =====
-        Info.resize(Capacity + 1);
-        Data = Allocator.allocate(Capacity + 1);
-        for (int i = 0; i < Capacity + 1; i++) {
-            Node<value_type> node(&Data[i], hm.Info[i].status);
-            new (&Data[i]) value_type(hm.Data[i]);
-            Info[i] = node;
-        }
     } /// OK
 
     hash_map(hash_map&& hm, const allocator_type& a) {
@@ -317,22 +307,7 @@ public:
 
     hash_map& operator=(const hash_map &hm) {
         clear();
-        Allocator.deallocate(Data, Capacity + 1);
-        LoadFactor = hm.LoadFactor;
-        Capacity = hm.Capacity;
-        Size = hm.Size;
-        // =====
-        Hash_ = hm.Hash_;
-        Pred_ = hm.Pred_;
-        Allocator = hm.Allocator;
-        // =====
-        Info.resize(Capacity + 1);
-        Data = Allocator.allocate(Capacity + 1);
-        for (int i = 0; i < Capacity + 1; i++) {
-            Node<value_type> node(&Data[i], hm.Info[i].status);
-            new (&Data[i]) value_type(hm.Data[i]);
-            Info[i] = node;
-        }
+        copy_constructor_wrapper(hm);
         return *this;
     } /// OK
 
@@ -422,14 +397,14 @@ public:
     } /// OK
 
     std::pair<iterator, bool> insert(const value_type& x) {
-        if ((double)(Size + 1) / Capacity >= LoadFactor) {
+        if ((double)(Size + 1) / Capacity >= max_load_factor()) {
             reserve(2 * (Size + 1));
         }
         int def_hash = hash_function()(x.first);
         int hash = def_hash = abs(def_hash);
         bool unique = true;
         for (int i = 0; i < Capacity; i++) {
-            hash = (def_hash + i) % Capacity;
+            hash = (def_hash + (i * i)) % Capacity;
             if (Info[hash].status == EMPTY || Info[hash].status == REMOVED) {
                 new (&Data[hash]) value_type(x);
                 Info[hash].status = PLACED;
@@ -513,17 +488,26 @@ public:
         }
     } /// OK
 
-    void swap(hash_map& x) noexcept {
+    void swap_move_wrapper(hash_map &x) {
         using std::swap;
         swap(this->LoadFactor, x.LoadFactor);
         swap(this->Capacity, x.Capacity);
         swap(this->Size, x.Size);
-        swap(this->Info, x.Info);
         swap(this->Data, x.Data);
         swap(this->Allocator, x.Allocator);
         swap(this->Hash_, x.Hash_);
         swap(this->Pred_, x.Pred_);
+    }
+
+    void swap(hash_map& x) noexcept {
+        swap_move_wrapper(x);
+        std::swap(this->Info, x.Info);
     } /// OK
+
+    void move(hash_map &x) noexcept {
+        swap_move_wrapper(x);
+        this->Info = std::move(x.Info);
+    } /// 
 
     template<typename _H2, typename _P2>
     void merge(hash_map<K, T, _H2, _P2, Alloc>& source) {
@@ -550,7 +534,7 @@ public:
         int def_hash = hash_function()(x);
         int hash = def_hash = abs(def_hash);
         for (int i = 0; i < Capacity; i++) {
-            hash = (def_hash + i) % Capacity;
+            hash = (def_hash + (i * i)) % Capacity;
             if (Info[hash].status == EMPTY) {
                 return end();
             }
@@ -565,7 +549,7 @@ public:
         int def_hash = hash_function()(x);
         int hash = def_hash = abs(def_hash);
         for (int i = 0; i < Capacity; i++) {
-            hash = (def_hash + i) % Capacity;
+            hash = (def_hash + (i * i)) % Capacity;
             if (Info[hash].status == EMPTY) {
                 return end();
             }
@@ -680,9 +664,8 @@ public:
     } /// OK
 
     bool operator==(const hash_map& other) const {
-        bool ans;
         if (Size != other.Size) {
-            ans = false;
+            return false;
         }
         else {
             std::vector<K> vec1, vec2;
@@ -692,17 +675,10 @@ public:
             for (auto el : other) {
                 vec2.push_back(el.first);
             }
-            sort(vec1.begin(), vec1.end(), key_eq());
-            sort(vec2.begin(), vec2.end(), key_eq());
-            for (int i = 0; i < vec1.size(); i++) {
-                if (vec1[i] != vec2[i]) {
-                    ans = false;
-                    break;
-                }
-            }
-            ans = true;
+            sort(vec1.begin(), vec1.end());
+            sort(vec2.begin(), vec2.end());
+            return vec1 == vec2;
         }
-        return ans;
     } /// OK
 
 private:
