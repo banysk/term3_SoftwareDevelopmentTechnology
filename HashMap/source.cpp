@@ -3,6 +3,7 @@
 #include "hash_map.hpp"
 #include <fstream>
 #include <vector>
+#include <algorithm>
 
 std::vector<std::string> log_data;
 
@@ -161,12 +162,25 @@ TEST_CASE("hash_map") {
         log_data.push_back("SECTION(\"11\")\n");
         log_data.push_back("<no data>\n");
         fefu::hash_map<std::string, int> hm1, hm2;
-        hm1.max_load_factor(1.00);
+        hm1.max_load_factor(0.5);
         hm2.max_load_factor(0.25);
         for (int i = 0; i < 100; i++) {
             hm1.insert({ std::to_string(i), i });
+            REQUIRE(hm1.size() == i + 1);
             hm2.insert({ std::to_string(99 - i), 99 - i });
+            REQUIRE(hm2.size() == i + 1);
         }
+        std::vector<int> v1, v2;
+        for (auto el : hm1) {
+            v1.push_back(el.second);
+        }
+        for (auto el : hm2) {
+            v2.push_back(el.second);
+        }
+        std::sort(v1.begin(), v1.end());
+        std::sort(v2.begin(), v2.end());
+        log_data.push_back(std::to_string(v1.size()) + " | " + std::to_string(v2.size()) + '\n');
+        REQUIRE(v1 == v2);
         REQUIRE(hm1 == hm2);
     }
 
@@ -204,8 +218,8 @@ TEST_CASE("hash_map") {
     }
 
     SECTION("14") {
-        log_data.push_back("<no data>\n");
         log_data.push_back("SECTION(\"14\")\n");
+        log_data.push_back("<no data>\n");
         fefu::allocator<std::pair<const std::string, int>> a;
         fefu::hash_map<std::string, int> hm1(a);
         for (int i = 0; i < 100; i++) {
