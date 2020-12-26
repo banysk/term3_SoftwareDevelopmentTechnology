@@ -25,11 +25,11 @@ TEST_CASE("hash_map") {
         REQUIRE(hm.size() == 2);
         hm.insert({ "3", 3 });
         REQUIRE(hm.size() == 3);
-        hm.insert({ "4", 2 });
+        hm.insert({ "4", 4 });
         REQUIRE(hm.size() == 4);
-        hm.insert({ "5", 1 });
+        hm.insert({ "5", 5 });
         REQUIRE(hm.size() == 5);
-        hm.insert({ "5", 0 });
+        hm.insert({ "5", 6 });
         REQUIRE(hm.size() == 5);
     }
 
@@ -49,15 +49,20 @@ TEST_CASE("hash_map") {
     SECTION("3") {
         log_data.push_back("SECTION(\"3\")\n");
         std::pair<const std::string, int> a[] = {
-            {"1", 5}, {"2", 4}, {"3", 3}, {"4", 2}, {"5", 1}
+            {"1", 1}, {"2", 2}, {"3", 3}, {"4", 4}, {"5", 5}
         };
         fefu::hash_map<std::string, int> hm;
-        for (int i = 1; i < 6; i++) {
-            hm.insert(a[i - 1]);
-        }
+        hm.insert(a[0]);
+        hm.insert(a[1]);
+        hm.insert(a[2]);
+        hm.insert(a[3]);
+        hm.insert(a[4]);
+        log_data.push_back("-----\n");
         for (auto el : hm) {
             log_data.push_back("\"" + el.first + "\":=" + std::to_string(el.second) + "\n");
         }
+        log_data.push_back("-----\n");
+        REQUIRE(hm.size() == 5);
     }
 
     SECTION("4") {
